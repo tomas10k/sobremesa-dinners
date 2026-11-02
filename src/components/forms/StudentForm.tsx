@@ -53,6 +53,10 @@ export function StudentForm({ events, preselect }: { events: PublicEvent[]; pres
               ))}
             </select>
           </Field>
+          <div className="cost">
+            <span className="label soft">{t.stCostLabel}</span>
+            <p className="body">{t.stCost}</p>
+          </div>
         </fieldset>
 
         <fieldset>

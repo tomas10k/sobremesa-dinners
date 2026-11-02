@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { proposalSchema, speakerSchema, studentSchema } from "@/lib/schemas";
+import { addDays, mondayOf, toISODate } from "@/lib/weeks";
 
 const EVENT = "11111111-1111-4111-8111-111111111111";
+const thisMonday = mondayOf(new Date());
+const nextWeek = toISODate(addDays(thisMonday, 7));
 
 const speaker = {
   name: "Ana López",
@@ -11,8 +14,9 @@ const speaker = {
   role: "VP Product",
   industry: "tech",
   weekdays: ["tue"],
+  weeks: [nextWeek],
   cities: ["sf"],
-  motivation: "give_back",
+  motivations: ["give_back", "latino_network"],
 };
 
 const student = {
@@ -37,6 +41,20 @@ describe("speakerSchema", () => {
   it("requires at least one weekday and one city", () => {
     expect(speakerSchema.safeParse({ ...speaker, weekdays: [] }).success).toBe(false);
     expect(speakerSchema.safeParse({ ...speaker, cities: [] }).success).toBe(false);
+  });
+  it("requires at least one week, and only Mondays inside the next six months", () => {
+    expect(speakerSchema.safeParse({ ...speaker, weeks: [] }).success).toBe(false);
+    expect(speakerSchema.safeParse({ ...speaker, weeks: [toISODate(addDays(thisMonday, 8))] }).success).toBe(false);
+    expect(speakerSchema.safeParse({ ...speaker, weeks: [toISODate(addDays(thisMonday, 7 * 40))] }).success).toBe(false);
+    expect(speakerSchema.safeParse({ ...speaker, weeks: ["2026-13-01"] }).success).toBe(false);
+  });
+  it("accepts several motivations and removes duplicate weeks", () => {
+    const r = speakerSchema.parse({ ...speaker, weeks: [nextWeek, nextWeek] });
+    expect(r.motivations).toEqual(["give_back", "latino_network"]);
+    expect(r.weeks).toEqual([nextWeek]);
+  });
+  it("requires at least one motivation", () => {
+    expect(speakerSchema.safeParse({ ...speaker, motivations: [] }).success).toBe(false);
   });
   it("rejects days outside Monday to Thursday", () => {
     expect(speakerSchema.safeParse({ ...speaker, weekdays: ["fri"] }).success).toBe(false);

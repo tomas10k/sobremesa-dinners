@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useLang } from "../LangProvider";
 import { Chips, Field, FormPage, Honeypot, SubmitRow, useSubmit } from "./kit";
+import { WeekCalendar } from "./WeekCalendar";
 import { CITIES, INDUSTRIES, MOTIVATIONS, SEAT_ANSWERS, WEEKDAYS } from "@/lib/schemas";
 import { formatEventDate } from "@/lib/i18n";
 import type { PublicEvent } from "@/lib/events";
@@ -16,10 +17,12 @@ export function SpeakerForm({ openEvents }: { openEvents: PublicEvent[] }) {
 
   const [f, setF] = useState({
     name: "", email: "", linkedin_url: "", company: "", role: "", industry: "",
-    motivation: "", motivation_other: "", dietary: "", roots: "", heard_from: "", website: "",
+    motivation_other: "", dietary: "", roots: "", heard_from: "", website: "",
   });
   const [weekdays, setWeekdays] = useState<(typeof WEEKDAYS)[number][]>([]);
   const [cities, setCities] = useState<(typeof CITIES)[number][]>([]);
+  const [weeks, setWeeks] = useState<string[]>([]);
+  const [motivations, setMotivations] = useState<(typeof MOTIVATIONS)[number][]>([]);
   const [seats, setSeats] = useState<Record<string, (typeof SEAT_ANSWERS)[number] | undefined>>({});
   const [referrals, setReferrals] = useState<Referral[]>([emptyReferral()]);
   const [flags, setFlags] = useState({ can_host: false, can_sponsor: false, hiring: false });
@@ -36,7 +39,9 @@ export function SpeakerForm({ openEvents }: { openEvents: PublicEvent[] }) {
     submit({
       ...f,
       weekdays,
+      weeks,
       cities,
+      motivations,
       ...flags,
       lang,
       seats: Object.entries(seats).flatMap(([event_id, answer]) => (answer ? [{ event_id, answer }] : [])),
@@ -81,19 +86,32 @@ export function SpeakerForm({ openEvents }: { openEvents: PublicEvent[] }) {
           <Field label={t.fWeekdays} name="weekdays" errors={errors} group>
             <Chips name="weekdays" multiple options={WEEKDAYS} value={weekdays} onChange={setWeekdays} labels={(d) => t[d]} />
           </Field>
+          <Field label={t.fWeeks} name="weeks" errors={errors} group>
+            <p className="hint soft">{t.fWeeksHint}</p>
+            <WeekCalendar value={weeks} onChange={setWeeks} />
+          </Field>
           <Field label={t.fCities} name="cities" errors={errors} group>
             <Chips name="cities" multiple options={CITIES} value={cities} onChange={setCities} labels={(c) => t[c]} />
           </Field>
         </fieldset>
 
         <fieldset>
-          <Field label={t.spWhy} name="motivation" errors={errors}>
-            <select className="input" value={f.motivation} onChange={set("motivation")} required>
-              <option value="" disabled>{t.choose}</option>
-              {MOTIVATIONS.map((m) => <option key={m} value={m}>{t[m]}</option>)}
-            </select>
+          <legend className="meta-lg">{t.spWhy}</legend>
+          <Field label={t.spWhyHint} name="motivations" errors={errors} group>
+            {MOTIVATIONS.map((m) => (
+              <label className="check body" key={m}>
+                <input
+                  type="checkbox"
+                  checked={motivations.includes(m)}
+                  onChange={() =>
+                    setMotivations(motivations.includes(m) ? motivations.filter((x) => x !== m) : [...motivations, m])
+                  }
+                />
+                <span>{t[m]}</span>
+              </label>
+            ))}
           </Field>
-          {f.motivation === "other" && (
+          {motivations.includes("other") && (
             <Field label={t.fOtherWhy} name="motivation_other" errors={errors}>
               <input className="input" value={f.motivation_other} onChange={set("motivation_other")} />
             </Field>

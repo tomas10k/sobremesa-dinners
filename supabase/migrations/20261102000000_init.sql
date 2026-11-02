@@ -65,8 +65,9 @@ create table public.speakers (
   role text not null,
   industry text not null,
   weekdays text[] not null default '{}',
+  available_weeks date[] not null default '{}',  -- Mondays of the weeks they can do
   cities text[] not null default '{}',
-  motivation text not null,
+  motivations text[] not null default '{}',
   motivation_other text,
   can_host boolean not null default false,
   can_sponsor boolean not null default false,

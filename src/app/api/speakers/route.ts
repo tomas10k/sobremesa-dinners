@@ -8,12 +8,12 @@ export async function POST(req: Request) {
   const db = serviceClient();
   if (!db) return notConfigured();
 
-  const { seats, referrals, website, ...speaker } = parsed.data;
-  const motivation_other = speaker.motivation === "other" ? speaker.motivation_other : undefined;
+  const { seats, referrals, website, weeks, ...speaker } = parsed.data;
+  const motivation_other = speaker.motivations.includes("other") ? speaker.motivation_other : undefined;
 
   const { data, error } = await db
     .from("speakers")
-    .insert({ ...speaker, motivation_other })
+    .insert({ ...speaker, available_weeks: weeks, motivation_other })
     .select("id")
     .single();
   if (error) return serverError("speakers.insert", error.message);

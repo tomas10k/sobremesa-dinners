@@ -1,12 +1,15 @@
 import { z } from "zod";
 import { countWords, ESSAY_MAX_WORDS } from "./words";
+import { isValidWeek, MAX_WEEKS_AHEAD } from "./weeks";
 
 export const WEEKDAYS = ["mon", "tue", "wed", "thu"] as const;
 export const CITIES = ["berkeley", "sf"] as const;
 export const MOTIVATIONS = ["give_back", "same_industry", "latino_network", "other"] as const;
 export const INDUSTRIES = [
-  "tech", "finance", "consulting", "vc_pe", "entrepreneurship", "health",
-  "energy", "consumer", "media", "public_social", "other",
+  "tech", "ai", "fintech", "finance", "banking", "vc_pe", "consulting", "entrepreneurship",
+  "health", "biotech", "energy", "real_estate", "consumer", "food_ag", "hospitality",
+  "fashion_design", "media", "marketing", "sports", "education", "legal", "manufacturing",
+  "mobility", "aerospace", "public_social", "other",
 ] as const;
 export const YEARS = ["1", "2"] as const;
 export const PROPOSAL_KINDS = ["speakers", "topics", "both"] as const;
@@ -51,8 +54,13 @@ export const speakerSchema = z.object({
   role: text(120),
   industry: z.enum(INDUSTRIES),
   weekdays: z.array(z.enum(WEEKDAYS)).min(1),
+  weeks: z
+    .array(z.string().refine((w) => isValidWeek(w, new Date()), "week"))
+    .min(1)
+    .max(MAX_WEEKS_AHEAD + 1)
+    .transform((w) => [...new Set(w)].sort()),
   cities: z.array(z.enum(CITIES)).min(1),
-  motivation: z.enum(MOTIVATIONS),
+  motivations: z.array(z.enum(MOTIVATIONS)).min(1).transform((m) => [...new Set(m)]),
   motivation_other: optionalText(300),
   seats: z
     .array(z.object({ event_id: z.string().uuid(), answer: z.enum(SEAT_ANSWERS) }))
