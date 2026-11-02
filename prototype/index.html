@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sobremesa Dinners</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --linen: #ece6d8;
+    --ink: #1f3a2e;
+    --ink-soft: rgba(31, 58, 46, .6);
+    --rule: rgba(31, 58, 46, .2);
+    --night: #0e0d0b;
+    --wide: "wdth" 125;
+    --t-head: clamp(32px, 4.2vw, 60px);
+    --t-body: clamp(18px, 1.8vw, 23px);
+    --t-meta: clamp(14px, 1.5vw, 19px);
+    --space: 72px;
+    --outer: clamp(24px, 3vw, 44px);
+    --inner: clamp(48px, 7vw, 110px);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    color: var(--ink);
+    font-family: "Archivo", system-ui, sans-serif;
+    font-size: 17px;
+    line-height: 1.6;
+    background-color: var(--linen);
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cfilter id='h'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9 0.03' numOctaves='2' seed='4'/%3E%3CfeColorMatrix values='0 0 0 0 0.42 0 0 0 0 0.36 0 0 0 0 0.25 0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23h)'/%3E%3C/svg%3E"),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cfilter id='v'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.03 0.9' numOctaves='2' seed='9'/%3E%3CfeColorMatrix values='0 0 0 0 0.42 0 0 0 0 0.36 0 0 0 0 0.25 0 0 0 0.07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23v)'/%3E%3C/svg%3E");
+  }
+  a { color: inherit; text-decoration: none; }
+
+  /* film grain over everything */
+  body::after {
+    content: ""; position: fixed; inset: -50%; pointer-events: none; z-index: 30;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+    opacity: .08; mix-blend-mode: overlay;
+    animation: grain 1s steps(6) infinite;
+  }
+  @keyframes grain {
+    0% { transform: translate(0, 0); } 20% { transform: translate(-3%, 2%); } 40% { transform: translate(2%, -3%); }
+    60% { transform: translate(-2%, -1%); } 80% { transform: translate(3%, 3%); } 100% { transform: translate(0, 0); }
+  }
+  @media (prefers-reduced-motion: reduce) { body::after { animation: none; } }
+
+
+  .label {
+    font-variation-settings: var(--wide); font-weight: 600; font-size: 11px;
+    letter-spacing: .26em; text-transform: uppercase;
+  }
+  .soft { color: var(--ink-soft); }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+
+  /* ---------- hero: a film still ---------- */
+  .hero {
+    position: relative; min-height: 100vh; min-height: 100svh; overflow: hidden;
+    background: var(--night) url("img/hero.jpg") center 62% / cover no-repeat;
+    color: var(--linen);
+    display: grid; grid-template-rows: auto 1fr auto;
+    padding: 22px 24px 26px;
+  }
+  .hero::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background:
+      radial-gradient(ellipse 90% 80% at 50% 55%, transparent 40%, rgba(0, 0, 0, .6)),
+      linear-gradient(to bottom, rgba(0, 0, 0, .35), transparent 25%, transparent 60%, rgba(0, 0, 0, .55));
+  }
+  .hero > * { position: relative; }
+  nav { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+  .nav-right { display: flex; align-items: center; gap: 22px; }
+  .lang { display: flex; gap: 12px; }
+  .lang button {
+    font: inherit; letter-spacing: inherit; text-transform: inherit;
+    background: none; border: 0; padding: 4px 0; cursor: pointer; color: rgba(236, 230, 216, .55);
+  }
+  .lang button[aria-pressed="true"] { color: var(--linen); border-bottom: 1px solid var(--linen); }
+  .cta {
+    padding: 11px 18px; border: 1px solid rgba(236, 230, 216, .7); border-radius: 999px;
+    transition: background .3s, color .3s;
+  }
+  .cta:hover, .cta:focus-visible { background: var(--linen); color: var(--night); }
+  .hero h1 { align-self: end; margin: 0 0 28px; font-size: clamp(48px, 10.5vw, 160px); font-weight: 300; font-variation-settings: var(--wide); letter-spacing: .01em; line-height: .95; text-shadow: 0 2px 30px rgba(0, 0, 0, .35); }
+  .credits { display: flex; justify-content: space-between; gap: 12px 24px; flex-wrap: wrap; color: rgba(236, 230, 216, .7); }
+
+  /* ---------- the definition: an open book ---------- */
+  .intro { padding: var(--space) 24px 0; }
+  .book {
+    position: relative; max-width: 1180px; margin: 0 auto;
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    padding: 12px 22px 20px;
+    /* cloth hardcover peeking out behind the pages */
+    background: repeating-linear-gradient(45deg, rgba(255, 255, 255, .03) 0 1px, transparent 1px 3px), #22382d;
+    border-radius: 6px;
+    box-shadow: 0 50px 80px -40px rgba(40, 30, 15, .6), 0 6px 14px rgba(40, 30, 15, .22);
+  }
+  .page {
+    position: relative; min-height: min(68vh, 660px);
+    padding: clamp(64px, 8vw, 112px) 0 clamp(64px, 7vw, 96px);
+    background-color: #f5f0e5;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 0.45 0 0 0 0 0.38 0 0 0 0 0.26 0 0 0 0.06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)'/%3E%3C/svg%3E");
+  }
+  /* a stack of leaves at the outer edges */
+  /* text hugs the outer edge, leaving a wide margin at the spine */
+  .page.left { padding-left: var(--outer); padding-right: var(--inner); }
+  .page.right { padding-left: var(--inner); padding-right: var(--outer); }
+  .page.left {
+    border-radius: 5px 0 0 5px;
+    box-shadow: -1px 1px 0 #ece6d8, -2px 2px 0 #d8cfbd, -3px 3px 0 #ebe4d5, -4px 4px 0 #d4cbb8, -5px 5px 0 #e8e1d1, -6px 6px 0 #cdc3af;
+  }
+  .page.right {
+    border-radius: 0 5px 5px 0;
+    box-shadow: 1px 1px 0 #ece6d8, 2px 2px 0 #d8cfbd, 3px 3px 0 #ebe4d5, 4px 4px 0 #d4cbb8, 5px 5px 0 #e8e1d1, 6px 6px 0 #cdc3af;
+  }
+  .page::after { content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: inherit; }
+  .page.left::after { background: linear-gradient(to right, rgba(255, 255, 255, .25), transparent 18%, transparent 78%, rgba(60, 45, 20, .1) 90%, rgba(60, 45, 20, .32)); }
+  .page.right::after { background: linear-gradient(to left, rgba(255, 255, 255, .25), transparent 18%, transparent 78%, rgba(60, 45, 20, .1) 90%, rgba(60, 45, 20, .32)); }
+  .runhead, .folio { position: absolute; }
+  .runhead { top: 32px; }
+  .folio { bottom: 32px; }
+  .left .runhead, .left .folio { left: var(--outer); }
+  .right .runhead, .right .folio { right: var(--outer); }
+  .book .word { font-variation-settings: var(--wide); font-weight: 300; font-size: clamp(28px, 3.7vw, 52px); letter-spacing: .04em; line-height: 1; }
+  .book .meta { margin: 16px 0 32px; font-style: italic; font-weight: 300; font-variation-settings: var(--wide); }
+  .book .text { margin: 0; font-variation-settings: var(--wide); font-weight: 300; font-size: var(--t-body); line-height: 1.5; }
+  .book .facts { white-space: pre-line; margin: 40px 0 0; font-size: var(--t-meta); letter-spacing: .2em; line-height: 2; }
+
+  /* ---------- sections below the book share its width and type ---------- */
+  .block { max-width: calc(1180px + 48px); margin: 0 auto; padding: var(--space) 24px 0; }
+  .head { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; flex-wrap: wrap; padding-bottom: 20px; border-bottom: 1px solid var(--rule); }
+  .head h2 { margin: 0; font-variation-settings: var(--wide); font-weight: 300; font-size: var(--t-head); letter-spacing: .04em; line-height: 1; }
+  .body { font-variation-settings: var(--wide); font-weight: 300; font-size: var(--t-body); line-height: 1.5; }
+  .meta-lg { font-variation-settings: var(--wide); font-weight: 600; font-size: var(--t-meta); letter-spacing: .2em; text-transform: uppercase; }
+
+  /* events */
+  .tabs { display: flex; gap: 24px; }
+  .tabs button {
+    font: inherit; letter-spacing: inherit; text-transform: inherit;
+    background: none; border: 0; padding: 4px 0; cursor: pointer; color: var(--ink-soft);
+  }
+  .tabs button[aria-selected="true"] { color: var(--ink); border-bottom: 1px solid var(--ink); }
+  .event {
+    display: grid; grid-template-columns: 110px minmax(0, 1fr) auto; gap: 24px; align-items: baseline;
+    padding: 28px 0; border-bottom: 1px solid var(--rule);
+  }
+  .event h3 { margin: 0; }
+  .event > .meta-lg { white-space: nowrap; }
+  .empty { margin: 0; padding: 28px 0; font-style: italic; }
+
+  /* story */
+  .about { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 48px; padding-top: 40px; }
+  .people { list-style: none; margin: 0; padding: 0; display: grid; gap: 28px; align-content: start; }
+  .people a { display: inline-flex; flex-direction: column; gap: 6px; }
+  .people .meta-lg { color: var(--ink-soft); border-bottom: 1px solid var(--rule); align-self: start; padding-bottom: 2px; transition: color .2s, border-color .2s; }
+  .people a:hover .meta-lg { color: var(--ink); border-color: var(--ink); }
+  .about p { margin: 0; }
+
+  /* community */
+  .links { display: flex; flex-wrap: wrap; gap: 16px; padding-top: 40px; }
+  .links a {
+    padding: 20px 34px; border: 1px solid var(--ink); border-radius: 999px;
+    font-size: clamp(12px, 1.1vw, 14px);
+    transition: background .25s, color .25s;
+  }
+  .links a:hover, .links a:focus-visible { background: var(--ink); color: var(--linen); }
+
+  footer { padding: var(--space) 24px 26px; margin-top: var(--space); }
+  footer .credits { color: var(--ink-soft); }
+
+  .reveal { opacity: 0; transform: translateY(14px); transition: opacity 1.4s ease, transform 1.4s ease; }
+  .reveal.in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; transition: none; } }
+
+  @media (max-width: 760px) {
+    .intro { padding-top: 48px; }
+    .book { grid-template-columns: minmax(0, 1fr); padding: 8px 8px 12px; }
+    .page, .page.left, .page.right { min-height: 0; padding: 72px 28px 76px; }
+    .page.left, .page.right { transform: none; border-radius: 4px; box-shadow: 0 1px 0 #ece6d8, 0 2px 0 #d8cfbd, 0 3px 0 #ebe4d5, 0 4px 0 #cdc3af; }
+    .page.right { margin-top: 10px; }
+    .page.left::after, .page.right::after { background: linear-gradient(to bottom, rgba(255, 255, 255, .2), transparent 30%, transparent 85%, rgba(60, 45, 20, .1)); }
+  }
+
+  @media (max-width: 640px) {
+    nav > span:first-child { display: none; }
+    .cta { white-space: nowrap; padding: 10px 14px; font-size: 10px; letter-spacing: .12em; }
+    .nav-right { gap: 14px; }
+    nav { justify-content: flex-end; }
+    .event { grid-template-columns: 64px minmax(0, 1fr); gap: 6px 14px; }
+    .event > .meta-lg:first-child { font-size: 12px; }
+    .about { grid-template-columns: minmax(0, 1fr); gap: 32px; }
+    .links a { width: 100%; }
+    .event .when { grid-column: 2; }
+    .credits { justify-content: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <nav class="label">
+    <span>Sobremesa</span>
+    <div class="nav-right">
+      <div class="lang" role="group" aria-label="Idioma / Language">
+        <button type="button" data-lang="es" aria-pressed="true">ES</button>
+        <button type="button" data-lang="en" aria-pressed="false">EN</button>
+      </div>
+      <a class="cta" href="#" data-i18n="cta">¿Te interesa ser speaker?</a>
+    </div>
+  </nav>
+  <div></div>
+  <div>
+    <h1 class="title">Sobremesa<br>Dinners</h1>
+    <div class="credits label">
+      <span>San Francisco · Berkeley</span>
+      <span data-i18n="next">No. 1 — 17 nov · Berkeley</span>
+    </div>
+  </div>
+</header>
+
+<section class="intro reveal">
+  <div class="book">
+    <div class="page left">
+      <span class="runhead label soft">Sobremesa</span>
+      <div class="word">so·bre·me·sa</div>
+      <div class="meta soft">/so·βɾe·ˈme·sa/ &nbsp; <span data-i18n="pos">sustantivo femenino</span></div>
+      <p class="text" data-i18n="def">El tiempo que uno se queda en la mesa después de comer, platicando sin prisa.</p>
+      <span class="folio label soft">1</span>
+    </div>
+    <div class="page right">
+      <span class="runhead label soft">Dinners</span>
+      <p class="text" data-i18n="desc">Una cena para compartir, a la latina. Cada speaker viene a compartir su experiencia y a conocer a otros latinos en el Bay, y los estudiantes vienen a escuchar, preguntar y crear relaciones que duran más que la cena.</p>
+      <p class="facts label soft" data-i18n="facts">3 speakers
+7–12 estudiantes
+1 tema
+7–9:30 pm</p>
+      <span class="folio label soft">2</span>
+    </div>
+  </div>
+</section>
+
+<section class="block events reveal">
+  <div class="head">
+    <h2 data-i18n="evTitle">Eventos</h2>
+    <div class="tabs meta-lg" role="tablist">
+      <button role="tab" aria-selected="true" data-tab="up" data-i18n="tabUp">Próximos</button>
+      <button role="tab" aria-selected="false" data-tab="past" data-i18n="tabPast">Anteriores</button>
+    </div>
+  </div>
+  <div data-panel="up">
+    <article class="event"><span class="meta-lg soft">No. 1</span><h3 class="body" data-i18n="e1">Emprender siendo latino</h3><span class="meta-lg when" data-i18n="e1when">17 nov · Berkeley</span></article>
+    <article class="event"><span class="meta-lg soft">No. 2</span><h3 class="body" data-i18n="e2">Go-to-market y estrategia</h3><span class="meta-lg when soft" data-i18n="tbd">Por confirmar</span></article>
+    <article class="event"><span class="meta-lg soft">No. 3</span><h3 class="body" data-i18n="e3">Inteligencia artificial</h3><span class="meta-lg when soft" data-i18n="tbd">Por confirmar</span></article>
+  </div>
+  <div data-panel="past" hidden><p class="empty body soft" data-i18n="pastEmpty">La primera mesa se sirve el 17 de noviembre.</p></div>
+</section>
+
+<section class="block story reveal">
+  <div class="head"><h2 data-i18n="aboutTitle">Quiénes somos</h2></div>
+  <div class="about">
+    <ul class="people">
+      <!-- TODO: real LinkedIn URLs -->
+      <li><a href="#" target="_blank" rel="noopener"><span class="body">Daniela Olavarrieta</span><span class="meta-lg">LinkedIn ↗</span></a></li>
+      <li><a href="#" target="_blank" rel="noopener"><span class="body">Tomás Diez Canedo</span><span class="meta-lg">LinkedIn ↗</span></a></li>
+    </ul>
+    <p class="body" data-i18n="story">Daniela y Tomás se conocieron en la universidad, en la Ciudad de México. Cada quien siguió su camino profesional, y se reencontraron en el MBA de Berkeley Haas. De lo que más extrañaban era la conexión a la latina, así que empezaron Sobremesa Dinners para hacer crecer la comunidad latina en el Bay.</p>
+  </div>
+</section>
+
+<section class="block community reveal">
+  <div class="head"><h2 data-i18n="joinTitle">Sé parte de la comunidad</h2></div>
+  <div class="links label">
+    <a href="#" data-i18n="l1">Soy speaker</a>
+    <a href="#" data-i18n="l2">Soy estudiante</a>
+    <a href="#" data-i18n="l3">Proponer una cena</a>
+  </div>
+</section>
+
+<footer>
+  <div class="credits label">
+    <span>Sobremesa Dinners · 2026</span>
+    <span><a href="mailto:diezcanedot@gmail.com">diezcanedot@gmail.com</a> &nbsp;·&nbsp; <a href="mailto:dolavarrietag@gmail.com">dolavarrietag@gmail.com</a></span>
+  </div>
+</footer>
+
+<script>
+const en = {
+  cta: "Interested in speaking?",
+  next: "No. 1 — Nov 17 · Berkeley",
+  pos: "feminine noun",
+  def: "The time spent lingering at the table after a meal, talking without hurry.",
+  desc: "A dinner to share, the Latino way. Each speaker comes to share their experience and meet other Latinos in the Bay, and students come to listen, ask, and build relationships that outlast the meal.",
+  facts: "3 speakers\n7–12 students\n1 topic\n7–9:30 pm",
+  evTitle: "Events", tabUp: "Upcoming", tabPast: "Past",
+  e1: "Entrepreneurship as a Latino", e1when: "Nov 17 · Berkeley",
+  e2: "Go-to-market & strategy", e3: "Artificial intelligence", tbd: "TBD",
+  pastEmpty: "The first table is served on November 17.",
+  aboutTitle: "Who we are",
+  story: "Daniela and Tomás met in college in Mexico City. Each followed their own career, and they found each other again at the Berkeley Haas MBA. What they missed most was connecting the Latino way, so they started Sobremesa Dinners to grow the Latino community in the Bay.",
+  joinTitle: "Be part of the community",
+  l1: "I’m a speaker", l2: "I’m a student", l3: "Propose a dinner"
+};
+const es = {};
+document.querySelectorAll("[data-i18n]").forEach(el => { es[el.dataset.i18n] ??= el.textContent; });
+
+function setLang(lang) {
+  const dict = lang === "en" ? en : es;
+  document.documentElement.lang = lang;
+  document.querySelectorAll("[data-i18n]").forEach(el => {
+    const v = dict[el.dataset.i18n];
+    if (v) el.textContent = v;
+  });
+  document.querySelectorAll(".lang button").forEach(b => b.setAttribute("aria-pressed", b.dataset.lang === lang));
+  try { localStorage.setItem("lang", lang); } catch {}
+}
+document.querySelectorAll(".lang button").forEach(b => b.addEventListener("click", () => setLang(b.dataset.lang)));
+try { if (localStorage.getItem("lang") === "en") setLang("en"); } catch {}
+
+document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll(".tabs button").forEach(x => x.setAttribute("aria-selected", x === b));
+  document.querySelectorAll("[data-panel]").forEach(p => p.hidden = p.dataset.panel !== b.dataset.tab);
+}));
+
+const io = new IntersectionObserver(entries => entries.forEach(e => {
+  if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }
+}), { threshold: 0.15 });
+document.querySelectorAll(".reveal").forEach(el => io.observe(el));
+</script>
+</body>
+</html>
