@@ -8,10 +8,10 @@ import { Reveal } from "./Reveal";
 import { formatEventDate } from "@/lib/i18n";
 import type { PublicEvent } from "@/lib/events";
 
-// TODO: real LinkedIn URLs
-const PEOPLE = [
-  { name: "Daniela Olavarrieta", linkedin: "#" },
-  { name: "Tomás Diez Canedo", linkedin: "#" },
+// TODO: Tomás's LinkedIn URL
+const PEOPLE: { name: string; linkedin: string | null }[] = [
+  { name: "Daniela Olavarrieta", linkedin: "https://www.linkedin.com/in/daniela-olavarrieta-gonzalez/" },
+  { name: "Tomás Diez Canedo", linkedin: null },
 ];
 
 export function Home({ events }: { events: PublicEvent[] }) {
@@ -98,10 +98,14 @@ export function Home({ events }: { events: PublicEvent[] }) {
           <ul className="people">
             {PEOPLE.map((p) => (
               <li key={p.name}>
-                <a href={p.linkedin} target="_blank" rel="noopener noreferrer">
+                {p.linkedin ? (
+                  <a href={p.linkedin} target="_blank" rel="noopener noreferrer">
+                    <span className="body">{p.name}</span>
+                    <span className="meta-lg">LinkedIn ↗</span>
+                  </a>
+                ) : (
                   <span className="body">{p.name}</span>
-                  <span className="meta-lg">LinkedIn ↗</span>
-                </a>
+                )}
               </li>
             ))}
           </ul>
