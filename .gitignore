@@ -44,3 +44,4 @@ next-env.d.ts
 
 # stock photo candidates (the chosen one lives in public/)
 reference/photos/
+.supabase-keys.tmp
