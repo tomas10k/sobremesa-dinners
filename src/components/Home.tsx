@@ -8,10 +8,9 @@ import { Reveal } from "./Reveal";
 import { formatEventDate } from "@/lib/i18n";
 import type { PublicEvent } from "@/lib/events";
 
-// TODO: Tomás's LinkedIn URL
 const PEOPLE: { name: string; linkedin: string | null }[] = [
   { name: "Daniela Olavarrieta", linkedin: "https://www.linkedin.com/in/daniela-olavarrieta-gonzalez/" },
-  { name: "Tomás Diez Canedo", linkedin: null },
+  { name: "Tomás Diez Canedo", linkedin: "https://www.linkedin.com/in/tomas-diez/" },
 ];
 
 export function Home({ events }: { events: PublicEvent[] }) {
