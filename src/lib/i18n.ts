@@ -12,7 +12,7 @@ const es = {
   pos: "sustantivo femenino",
   def: "El tiempo que uno se queda en la mesa después de comer, platicando sin prisa.",
   desc: "Una cena para compartir, a la latina. Cada speaker viene a compartir su experiencia y a conocer a otros latinos en el Bay, y los estudiantes vienen a escuchar, preguntar y crear relaciones que duran más que la cena.",
-  facts: "3 speakers\n7–12 estudiantes\n1 tema\n7–9:30 pm",
+  facts: "3 speakers\n7–12 estudiantes\n1 tema",
   // events
   events: "Eventos",
   upcoming: "Próximos",
@@ -45,7 +45,7 @@ const es = {
   invalidEmail: "Revisa tu email.",
   // speaker form
   spTitle: "Ser speaker",
-  spLede: "Cuéntanos de ti. Las cenas son de lunes a jueves, de 7 a 9:30 pm, en San Francisco o Berkeley.",
+  spLede: "Cuéntanos de ti. Las cenas son de lunes a jueves, en San Francisco o Berkeley.",
   spAbout: "Sobre ti",
   fCompany: "Empresa",
   fRole: "Rol",
@@ -126,7 +126,7 @@ const en: Dict = {
   pos: "feminine noun",
   def: "The time spent lingering at the table after a meal, talking without hurry.",
   desc: "A dinner to share, the Latino way. Each speaker comes to share their experience and meet other Latinos in the Bay, and students come to listen, ask, and build relationships that outlast the meal.",
-  facts: "3 speakers\n7–12 students\n1 topic\n7–9:30 pm",
+  facts: "3 speakers\n7–12 students\n1 topic",
   events: "Events",
   upcoming: "Upcoming",
   past: "Past",
@@ -154,7 +154,7 @@ const en: Dict = {
   invalidLinkedin: "Paste the link to your LinkedIn profile.",
   invalidEmail: "Check your email.",
   spTitle: "Become a speaker",
-  spLede: "Tell us about you. Dinners run Monday to Thursday, 7 to 9:30 pm, in San Francisco or Berkeley.",
+  spLede: "Tell us about you. Dinners run Monday to Thursday, in San Francisco or Berkeley.",
   spAbout: "About you",
   fCompany: "Company",
   fRole: "Role",
@@ -229,14 +229,10 @@ export const dictionaries: Record<Lang, Dict> = { es, en };
 
 const TZ = "America/Los_Angeles";
 
-/** "17 nov · 7 pm" / "Nov 17 · 7 pm", in Bay Area time. */
+/** "17 nov" / "Nov 17", in Bay Area time. */
 export function formatEventDate(iso: string | null, lang: Lang): string | null {
   if (!iso) return null;
-  const d = new Date(iso);
-  const day = new Intl.DateTimeFormat(lang === "es" ? "es-MX" : "en-US", {
+  return new Intl.DateTimeFormat(lang === "es" ? "es-MX" : "en-US", {
     timeZone: TZ, day: "numeric", month: "short",
-  }).format(d).replace(".", "");
-  const hour = new Intl.DateTimeFormat("en-US", { timeZone: TZ, hour: "numeric" })
-    .format(d).toLowerCase().replace(/\s/g, " ");
-  return `${day} · ${hour}`;
+  }).format(new Date(iso)).replace(".", "");
 }
