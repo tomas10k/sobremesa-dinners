@@ -2,6 +2,8 @@
 
 Small dinners to connect the Latino way: 3 speakers, 7–12 MBA students, one table in San Francisco or Berkeley. This repo is the public site (Spanish by default, English toggle) and the forms that feed the planning database.
 
+**Live:** https://sobremesa-dinners.vercel.app · **Health:** https://sobremesa-dinners.vercel.app/api/health
+
 **Stack:** Next.js 16 (App Router) · Supabase Postgres · Vercel. Owners: Tomás Diez Canedo and Daniela Olavarrieta.
 
 ## Pages
@@ -18,7 +20,7 @@ Small dinners to connect the Latino way: 3 speakers, 7–12 MBA students, one ta
 
 ```bash
 npm install
-cp .env.example .env.local   # fill in the three values from Supabase
+bash scripts/setup.sh        # first time only: links Supabase, writes .env.local, sets up Vercel
 npm run dev                  # http://localhost:3000
 ```
 
