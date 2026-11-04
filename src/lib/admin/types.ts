@@ -4,6 +4,8 @@ export type EventRow = {
   number: number;
   title_es: string;
   title_en: string;
+  description_es: string | null;
+  description_en: string | null;
   starts_at: string | null;
   city: "berkeley" | "sf" | null;
   venue: string | null;
@@ -26,8 +28,8 @@ export type SpeakerRow = {
   id: string;
   created_at: string;
   name: string;
-  email: string;
-  linkedin_url: string;
+  email: string | null;
+  linkedin_url: string | null;
   company: string;
   role: string;
   industry: string;
@@ -44,6 +46,9 @@ export type SpeakerRow = {
   heard_from: string | null;
   lang: string;
   status: "new" | "contacted" | "confirmed" | "declined";
+  /** Agreed to show their name and photo on the public site. */
+  public_profile: boolean;
+  photo_url: string | null;
   notes: string | null;
 };
 

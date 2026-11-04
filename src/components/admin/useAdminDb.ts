@@ -7,6 +7,8 @@ import type { EventSpeaker, TableName } from "@/lib/admin/types";
 
 type PgError = { code?: string; message: string } | null;
 
+const PHOTOS = "speaker-photos";
+
 function friendly(error: NonNullable<PgError>): string {
   switch (error.code) {
     case "23505": return "Eso ya existe (por ejemplo, el mismo número de cena o el mismo estudiante en esa cena).";
@@ -82,6 +84,42 @@ export function useAdminDb() {
 
     removeSeat: (eventId: string, speakerId: string) =>
       run(db.from("event_speakers").delete().eq("event_id", eventId).eq("speaker_id", speakerId)),
+
+    /** For speakers the team recruited directly: adds them and confirms their seat. */
+    addSpeakerToEvent: async (eventId: string, fields: Record<string, unknown>) => {
+      const { data, error } = await db
+        .from("speakers")
+        .insert({ ...fields, status: "confirmed" })
+        .select("id")
+        .single();
+      if (error) {
+        setMessage({ text: friendly(error), error: true });
+        return false;
+      }
+      return run(
+        db.from("event_speakers").insert({ event_id: eventId, speaker_id: data.id, status: "confirmed", source: "admin" }),
+        "Speaker agregado y confirmado.",
+      );
+    },
+
+    /** Uploads to the public speaker-photos bucket and saves the URL on the speaker. */
+    uploadPhoto: async (speakerId: string, file: File) => {
+      const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+      const path = `${speakerId}/${Date.now()}.${ext}`;
+      const { error } = await db.storage.from(PHOTOS).upload(path, file, { contentType: file.type });
+      if (error) {
+        setMessage({ text: `No se pudo subir la foto: ${error.message}`, error: true });
+        return false;
+      }
+      const url = db.storage.from(PHOTOS).getPublicUrl(path).data.publicUrl;
+      return run(db.from("speakers").update({ photo_url: url }).eq("id", speakerId), "Foto guardada.");
+    },
+
+    removePhoto: async (speakerId: string, url: string) => {
+      const path = url.split(`/${PHOTOS}/`)[1];
+      if (path) await db.storage.from(PHOTOS).remove([path]);
+      return run(db.from("speakers").update({ photo_url: null }).eq("id", speakerId), "Foto quitada.");
+    },
   };
 }
 

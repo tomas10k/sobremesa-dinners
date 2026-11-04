@@ -42,7 +42,7 @@ const PROPOSAL_STATUS = opts(["new", "reviewed", "used", "skipped"], (v) =>
   ({ new: "Nueva", reviewed: "Revisada", used: "Usada", skipped: "Descartada" })[v]!);
 const REFERRAL_STATUS = opts(["new", "contacted", "converted", "skipped"], (v) =>
   ({ new: "Nuevo", contacted: "Contactado", converted: "Ya es speaker", skipped: "Descartado" })[v]!);
-const INDUSTRY_OPTS = opts(INDUSTRIES, (v) => t[`ind_${v}` as "ind_tech"]);
+export const INDUSTRY_OPTS = opts(INDUSTRIES, (v) => t[`ind_${v}` as "ind_tech"]);
 const WEEKDAY_OPTS = opts(WEEKDAYS, (v) => t[v as "mon"]);
 const MOTIVATION_OPTS = opts(MOTIVATIONS, (v) => t[v as "give_back"]);
 const YEAR_OPTS = opts(YEARS, (v) => (v === "1" ? "1er año" : "2o año"));
@@ -57,6 +57,8 @@ export function eventColumns(data: AdminData): Col<EventRow>[] {
     { key: "number", label: "No.", type: "int", width: 60 },
     { key: "title_es", label: "Tema (ES)", type: "text", width: 220 },
     { key: "title_en", label: "Tema (EN)", type: "text", width: 200 },
+    { key: "description_es", label: "Descripción (ES)", type: "long", width: 260 },
+    { key: "description_en", label: "Descripción (EN)", type: "long", width: 260 },
     { key: "starts_at", label: "Fecha y hora (PT)", type: "datetime", width: 190 },
     { key: "city", label: "Ciudad", type: "select", options: CITY_OPTS, filter: true },
     { key: "venue", label: "Lugar (privado)", type: "text", width: 180 },
@@ -92,6 +94,8 @@ export function speakerColumns(data: AdminData): Col<SpeakerRow>[] {
     { key: "linkedin_url", label: "LinkedIn", type: "url" },
     { key: "company", label: "Empresa", type: "text" },
     { key: "role", label: "Rol", type: "text" },
+    { key: "public_profile", label: "Autorizó nombre y foto", type: "bool", filter: true },
+    { key: "photo_url", label: "Foto", type: "url" },
     { key: "industry", label: "Industria", type: "select", options: INDUSTRY_OPTS, filter: true, width: 170 },
     { key: "weekdays", label: "Días", type: "multi", options: WEEKDAY_OPTS, filter: true, width: 170 },
     { key: "available_weeks", label: "Semanas", type: "weeks", filter: true, width: 200 },

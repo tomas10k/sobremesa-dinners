@@ -16,11 +16,11 @@ export function NewEventDialog({ db, events, speakerIds = [], studentIds = [], o
 }) {
   const [f, setF] = useState({
     number: String(Math.max(0, ...events.map((e) => e.number)) + 1),
-    title_es: "", title_en: "", starts_at: "", city: "", venue: "", sponsor: "",
+    title_es: "", title_en: "", description_es: "", description_en: "", starts_at: "", city: "", venue: "", sponsor: "",
     speakers_needed: "3", status: "upcoming", applications_open: false,
   });
   const [saving, setSaving] = useState(false);
-  const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+  const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
     setF({ ...f, [k]: e.target.value });
 
   async function create(e: React.FormEvent) {
@@ -30,6 +30,8 @@ export function NewEventDialog({ db, events, speakerIds = [], studentIds = [], o
       number: Number(f.number),
       title_es: f.title_es.trim(),
       title_en: (f.title_en || f.title_es).trim(),
+      description_es: f.description_es.trim() || null,
+      description_en: f.description_en.trim() || null,
       starts_at: f.starts_at ? pacificInputToISO(f.starts_at) : null,
       city: f.city || null,
       venue: f.venue || null,
@@ -61,6 +63,8 @@ export function NewEventDialog({ db, events, speakerIds = [], studentIds = [], o
           <label>Speakers necesarios<input type="number" min={0} max={10} value={f.speakers_needed} onChange={set("speakers_needed")} /></label>
           <label className="span2">Tema (ES)<input required value={f.title_es} onChange={set("title_es")} /></label>
           <label className="span2">Tema (EN)<input value={f.title_en} onChange={set("title_en")} placeholder="Si lo dejas vacío, usa el de español" /></label>
+          <label className="span2">Descripción del tema (ES)<textarea rows={3} maxLength={2000} value={f.description_es} onChange={set("description_es")} /></label>
+          <label className="span2">Descripción del tema (EN)<textarea rows={3} maxLength={2000} value={f.description_en} onChange={set("description_en")} placeholder="Si lo dejas vacío, se muestra la de español" /></label>
           <label>Fecha y hora (hora del Pacífico)<input type="datetime-local" value={f.starts_at} onChange={set("starts_at")} /></label>
           <label>Ciudad
             <select value={f.city} onChange={set("city")}>

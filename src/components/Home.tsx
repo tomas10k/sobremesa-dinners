@@ -6,6 +6,7 @@ import { useState } from "react";
 import { LangToggle, useLang } from "./LangProvider";
 import { Reveal } from "./Reveal";
 import { formatEventDate } from "@/lib/i18n";
+import { speakerLine } from "@/lib/seats";
 import type { PublicEvent } from "@/lib/events";
 
 const PEOPLE: { name: string; linkedin: string | null }[] = [
@@ -62,7 +63,7 @@ export function Home({ events }: { events: PublicEvent[] }) {
         </div>
       </Reveal>
 
-      <Reveal className="block events">
+      <Reveal className="block events" id="eventos">
         <div className="head">
           <h2>{t.events}</h2>
           <div className="tabs meta-lg" role="tablist">
@@ -80,12 +81,20 @@ export function Home({ events }: { events: PublicEvent[] }) {
             const date = formatEventDate(e.starts_at, lang);
             const city = e.city ? t[e.city] : null;
             const when = date ? [date, city].filter(Boolean).join(" · ") : null;
+            const credits = speakerLine(e);
             return (
-              <article className="event" key={e.id}>
+              <Link className="event" key={e.id} href={`/cena/${e.number}`}>
                 <span className="meta-lg soft">No. {e.number}</span>
                 <h3 className="body">{lang === "es" ? e.title_es : e.title_en}</h3>
-                <span className={`meta-lg when ${when ? "" : "soft"}`}>{when ?? t.tbd}</span>
-              </article>
+                <div className="when">
+                  <span className={`meta-lg ${when ? "" : "soft"}`}>{when ?? t.tbd}</span>
+                  {credits.length > 0 && (
+                    <ul className="credits-list label soft">
+                      {credits.map((c, i) => <li key={i}>{c}</li>)}
+                    </ul>
+                  )}
+                </div>
+              </Link>
             );
           })
         )}

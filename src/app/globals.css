@@ -138,8 +138,11 @@ nav { display: flex; justify-content: space-between; align-items: center; gap: 1
   display: grid; grid-template-columns: 110px minmax(0, 1fr) auto; gap: 24px; align-items: baseline;
   padding: 28px 0; border-bottom: 1px solid var(--rule);
 }
-.event h3 { margin: 0; }
-.event > .meta-lg { white-space: nowrap; }
+.event h3 { margin: 0; text-decoration: underline 1px transparent; text-underline-offset: 6px; transition: text-decoration-color .25s; }
+a.event:hover h3, a.event:focus-visible h3 { text-decoration-color: var(--ink); }
+.event > .meta-lg, .event .when > .meta-lg { white-space: nowrap; }
+.event .when { display: grid; gap: 12px; justify-items: end; text-align: right; }
+.credits-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .empty { margin: 0; padding: 28px 0; font-style: italic; }
 
 /* story */
@@ -184,8 +187,24 @@ footer .credits { color: var(--ink-soft); }
   .event > .meta-lg:first-child { font-size: 12px; }
   .about { grid-template-columns: minmax(0, 1fr); gap: 32px; }
   .links a { width: 100%; }
-  .event .when { grid-column: 2; }
+  .event .when { grid-column: 2; justify-items: start; text-align: left; }
   .credits { justify-content: flex-start; }
+}
+
+/* ---------- event page ---------- */
+.event-page .head .when { flex-basis: 100%; margin: 12px 0 0; }
+.ev-desc { max-width: 62ch; margin: 40px 0 0; white-space: pre-line; }
+.ev-speakers { padding-top: var(--space); display: grid; gap: 28px; }
+.ev-speakers h3 { margin: 0; padding-bottom: 16px; border-bottom: 1px solid var(--rule); }
+.ev-speakers p { margin: 0; }
+.ev-speakers ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 40px 32px; }
+.ev-speakers li { display: grid; gap: 8px; align-content: start; }
+.ev-photo { width: 100%; height: auto; aspect-ratio: 4 / 5; object-fit: cover; filter: grayscale(1); border-radius: 2px; margin-bottom: 8px; }
+.ev-photo.blank { display: block; height: auto; border: 1px solid var(--rule); background: rgba(31, 58, 46, .04); }
+.event-page .links { padding-top: var(--space); }
+.ev-note { margin: 24px 0 0; }
+@media (max-width: 640px) {
+  .ev-speakers ul { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px 20px; }
 }
 
 /* ---------- form pages ---------- */

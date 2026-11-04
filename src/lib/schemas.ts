@@ -46,20 +46,25 @@ const optionalLinkedin = z
 // Bots fill every field; people never see this one.
 const honeypot = z.string().max(0).optional();
 
+/**
+ * The general speaker form asks for availability. Joining a specific dinner
+ * (`event_id`, from that dinner's page) skips it: the date is already set.
+ */
 export const speakerSchema = z.object({
+  event_id: z.string().uuid().optional(),
   name: text(120),
   email,
   linkedin_url: linkedin,
   company: text(120),
   role: text(120),
   industry: z.enum(INDUSTRIES),
-  weekdays: z.array(z.enum(WEEKDAYS)).min(1),
+  weekdays: z.array(z.enum(WEEKDAYS)).default([]),
   weeks: z
     .array(z.string().refine((w) => isValidWeek(w, new Date()), "week"))
-    .min(1)
     .max(MAX_WEEKS_AHEAD + 1)
+    .default([])
     .transform((w) => [...new Set(w)].sort()),
-  cities: z.array(z.enum(CITIES)).min(1),
+  cities: z.array(z.enum(CITIES)).default([]),
   motivations: z.array(z.enum(MOTIVATIONS)).min(1).transform((m) => [...new Set(m)]),
   motivation_other: optionalText(300),
   seats: z
@@ -78,6 +83,11 @@ export const speakerSchema = z.object({
   heard_from: optionalText(200),
   lang: z.enum(["es", "en"]).default("es"),
   website: honeypot,
+}).superRefine((s, ctx) => {
+  if (s.event_id) return;
+  for (const key of ["weekdays", "weeks", "cities"] as const) {
+    if (s[key].length === 0) ctx.addIssue({ code: "custom", path: [key], message: "required" });
+  }
 });
 
 export const studentSchema = z.object({

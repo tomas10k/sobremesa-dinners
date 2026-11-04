@@ -11,8 +11,11 @@ import type { PublicEvent } from "@/lib/events";
 type Referral = { name: string; linkedin_url: string; reason: string };
 const emptyReferral = (): Referral => ({ name: "", linkedin_url: "", reason: "" });
 
-export function SpeakerForm({ openEvents }: { openEvents: PublicEvent[] }) {
+/** With `event`, it's the short version for joining that dinner: no availability questions. */
+export function SpeakerForm({ openEvents, event }: { openEvents: PublicEvent[]; event?: PublicEvent }) {
   const { t, lang } = useLang();
+  const title = event ? t.joinTitle : t.spTitle;
+  const lede = event ? t.joinLede : t.spLede;
   const { state, errors, formError, submit } = useSubmit("/api/speakers");
 
   const [f, setF] = useState({
@@ -31,28 +34,39 @@ export function SpeakerForm({ openEvents }: { openEvents: PublicEvent[] }) {
     setF({ ...f, [k]: e.target.value });
 
   if (state === "done") {
-    return <FormPage title={t.spTitle} lede={t.spLede}><p className="done body">{t.spDone}</p></FormPage>;
+    return <FormPage title={title} lede={lede}><p className="done body">{event ? t.joinDone : t.spDone}</p></FormPage>;
   }
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    submit({
-      ...f,
-      weekdays,
-      weeks,
-      cities,
-      motivations,
-      ...flags,
-      lang,
-      seats: Object.entries(seats).flatMap(([event_id, answer]) => (answer ? [{ event_id, answer }] : [])),
-      referrals: referrals.filter((r) => r.name.trim()),
-    });
+    const shared = { ...f, motivations, ...flags, lang, referrals: referrals.filter((r) => r.name.trim()) };
+    submit(
+      event
+        ? { ...shared, event_id: event.id }
+        : {
+            ...shared,
+            weekdays,
+            weeks,
+            cities,
+            seats: Object.entries(seats).flatMap(([event_id, answer]) => (answer ? [{ event_id, answer }] : [])),
+          },
+    );
   }
 
   return (
-    <FormPage title={t.spTitle} lede={t.spLede}>
+    <FormPage title={title} lede={lede}>
       <form className="form" onSubmit={onSubmit} noValidate>
         <Honeypot value={f.website} onChange={(v) => setF({ ...f, website: v })} />
+
+        {event && (
+          <div className="cost">
+            <span className="label soft">{t.fEvent}</span>
+            <p className="body">No. {event.number} — {lang === "es" ? event.title_es : event.title_en}</p>
+            <span className="label soft">
+              {[formatEventDate(event.starts_at, lang) ?? t.tbd, event.city && t[event.city]].filter(Boolean).join(" · ")}
+            </span>
+          </div>
+        )}
 
         <fieldset>
           <legend className="meta-lg">{t.spAbout}</legend>
@@ -81,19 +95,21 @@ export function SpeakerForm({ openEvents }: { openEvents: PublicEvent[] }) {
           </div>
         </fieldset>
 
-        <fieldset>
-          <legend className="meta-lg">{t.spWhen}</legend>
-          <Field label={t.fWeekdays} name="weekdays" errors={errors} group>
-            <Chips name="weekdays" multiple options={WEEKDAYS} value={weekdays} onChange={setWeekdays} labels={(d) => t[d]} />
-          </Field>
-          <Field label={t.fWeeks} name="weeks" errors={errors} group>
-            <p className="hint soft">{t.fWeeksHint}</p>
-            <WeekCalendar value={weeks} onChange={setWeeks} />
-          </Field>
-          <Field label={t.fCities} name="cities" errors={errors} group>
-            <Chips name="cities" multiple options={CITIES} value={cities} onChange={setCities} labels={(c) => t[c]} />
-          </Field>
-        </fieldset>
+        {!event && (
+          <fieldset>
+            <legend className="meta-lg">{t.spWhen}</legend>
+            <Field label={t.fWeekdays} name="weekdays" errors={errors} group>
+              <Chips name="weekdays" multiple options={WEEKDAYS} value={weekdays} onChange={setWeekdays} labels={(d) => t[d]} />
+            </Field>
+            <Field label={t.fWeeks} name="weeks" errors={errors} group>
+              <p className="hint soft">{t.fWeeksHint}</p>
+              <WeekCalendar value={weeks} onChange={setWeeks} />
+            </Field>
+            <Field label={t.fCities} name="cities" errors={errors} group>
+              <Chips name="cities" multiple options={CITIES} value={cities} onChange={setCities} labels={(c) => t[c]} />
+            </Field>
+          </fieldset>
+        )}
 
         <fieldset>
           <legend className="meta-lg">{t.spWhy}</legend>
@@ -118,7 +134,7 @@ export function SpeakerForm({ openEvents }: { openEvents: PublicEvent[] }) {
           )}
         </fieldset>
 
-        {openEvents.length > 0 && (
+        {!event && openEvents.length > 0 && (
           <fieldset>
             <legend className="meta-lg">{t.spSeats}</legend>
             <p className="lede body soft">{t.spSeatsLede}</p>
