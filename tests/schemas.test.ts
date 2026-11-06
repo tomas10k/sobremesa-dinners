@@ -67,18 +67,6 @@ describe("speakerSchema", () => {
     expect(r).not.toHaveProperty("status");
     expect(r).not.toHaveProperty("notes");
   });
-  it("skips availability when joining a specific dinner", () => {
-    const { weekdays: _d, weeks: _w, cities: _c, ...joining } = speaker;
-    const r = speakerSchema.parse({ ...joining, event_id: EVENT });
-    expect(r.event_id).toBe(EVENT);
-    expect(r.weeks).toEqual([]);
-    expect(speakerSchema.safeParse(joining).success).toBe(false);
-  });
-  it("still checks the rest of the questions when joining a dinner", () => {
-    const { weekdays: _d, weeks: _w, cities: _c, ...joining } = speaker;
-    expect(speakerSchema.safeParse({ ...joining, event_id: EVENT, motivations: [] }).success).toBe(false);
-    expect(speakerSchema.safeParse({ ...joining, event_id: "not-a-uuid" }).success).toBe(false);
-  });
 });
 
 describe("studentSchema", () => {

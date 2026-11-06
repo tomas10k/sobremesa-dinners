@@ -85,16 +85,24 @@ export function useAdminDb() {
     removeSeat: (eventId: string, speakerId: string) =>
       run(db.from("event_speakers").delete().eq("event_id", eventId).eq("speaker_id", speakerId)),
 
-    /** For speakers the team recruited directly: adds them and confirms their seat. */
-    addSpeakerToEvent: async (eventId: string, fields: Record<string, unknown>) => {
+    /**
+     * For speakers the team already knows: just the main fields, no availability.
+     * With a dinner, they're added to it already confirmed.
+     */
+    addSpeaker: async (fields: Record<string, unknown>, eventId?: string) => {
       const { data, error } = await db
         .from("speakers")
-        .insert({ ...fields, status: "confirmed" })
+        .insert({ ...fields, status: eventId ? "confirmed" : "contacted" })
         .select("id")
         .single();
       if (error) {
         setMessage({ text: friendly(error), error: true });
         return false;
+      }
+      if (!eventId) {
+        setMessage({ text: "Speaker agregado.", error: false });
+        startRefresh(() => router.refresh());
+        return true;
       }
       return run(
         db.from("event_speakers").insert({ event_id: eventId, speaker_id: data.id, status: "confirmed", source: "admin" }),

@@ -9,6 +9,7 @@ import type { AdminData, EventRow, EventSpeaker, TableName } from "@/lib/admin/t
 import { DataTable } from "./DataTable";
 import { EventDetail } from "./EventDetail";
 import { NewEventDialog } from "./NewEventDialog";
+import { NewSpeaker } from "./NewSpeaker";
 import { exportSheets } from "./excel";
 import { useAdminDb } from "./useAdminDb";
 
@@ -90,30 +91,33 @@ export function Dashboard({ data, email, initialTab = "events", initialEvent = n
         )}
 
         {tab === "speakers" && (
-          <DataTable
-            title="Speakers"
-            exportName="sobremesa-speakers"
-            rows={data.speakers}
-            columns={speakerColumns(data)}
-            onSave={save("speakers")}
-            actions={(sel, clear) => {
-              const ids = sel.map((s) => s.id);
-              return (
-                <>
-                  <EventPicker
-                    label="Agregar a cena…"
-                    events={data.events}
-                    extra={SEAT_STATUS}
-                    extraDefault="invited"
-                    onPick={(eventId, status) => db.linkSpeakers(eventId, ids, status as EventSpeaker["status"]).then((ok) => ok && clear())}
-                  />
-                  <button className="a-btn" onClick={() => setNewEvent({ speakerIds: ids })}>Crear nueva cena con ellos</button>
-                  <StatusPicker options={SPEAKER_STATUS} onPick={(status) => db.updateMany("speakers", ids, { status }, "Estado actualizado.")} />
-                  <button className="a-btn danger" onClick={() => confirmDelete("speakers", ids, clear)}>Eliminar</button>
-                </>
-              );
-            }}
-          />
+          <>
+            <div className="a-toolbar"><NewSpeaker db={db} /></div>
+            <DataTable
+              title="Speakers"
+              exportName="sobremesa-speakers"
+              rows={data.speakers}
+              columns={speakerColumns(data)}
+              onSave={save("speakers")}
+              actions={(sel, clear) => {
+                const ids = sel.map((s) => s.id);
+                return (
+                  <>
+                    <EventPicker
+                      label="Agregar a cena…"
+                      events={data.events}
+                      extra={SEAT_STATUS}
+                      extraDefault="invited"
+                      onPick={(eventId, status) => db.linkSpeakers(eventId, ids, status as EventSpeaker["status"]).then((ok) => ok && clear())}
+                    />
+                    <button className="a-btn" onClick={() => setNewEvent({ speakerIds: ids })}>Crear nueva cena con ellos</button>
+                    <StatusPicker options={SPEAKER_STATUS} onPick={(status) => db.updateMany("speakers", ids, { status }, "Estado actualizado.")} />
+                    <button className="a-btn danger" onClick={() => confirmDelete("speakers", ids, clear)}>Eliminar</button>
+                  </>
+                );
+              }}
+            />
+          </>
         )}
 
         {tab === "students" && (

@@ -113,7 +113,7 @@ export function useSubmit(endpoint: string) {
         return;
       }
       const body = await res.json().catch(() => ({}));
-      if (res.status === 409) setFormError(body.error === "full" ? t.errorFull : t.errorDuplicate);
+      if (res.status === 409) setFormError(t.errorDuplicate);
       else setFormError(t.errorGeneric);
       if (body.fields) setErrors(toMessages(body.fields, t));
     } catch {
