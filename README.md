@@ -4,7 +4,7 @@ Small dinners to connect the Latino way: 3 speakers, 7–12 MBA students, one ta
 
 **Live:** https://sobremesa-dinners.vercel.app · **Health:** https://sobremesa-dinners.vercel.app/api/health
 
-**Stack:** Next.js 16 (App Router) · Supabase Postgres · Vercel. Owners: Tomás Diez Canedo and Daniela Olavarrieta.
+**Stack:** Next.js 16 (App Router) · Supabase Postgres · Vercel. Owners: Tomás Diez Canedo and Daniela Olavarrieta. How we work together: [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Pages
 
