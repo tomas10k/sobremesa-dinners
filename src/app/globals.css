@@ -139,7 +139,9 @@ nav { display: flex; justify-content: space-between; align-items: center; gap: 1
   padding: 28px 0; border-bottom: 1px solid var(--rule);
 }
 .event h3 { margin: 0; text-decoration: underline 1px transparent; text-underline-offset: 6px; transition: text-decoration-color .25s; }
-a.event:hover h3, a.event:focus-visible h3 { text-decoration-color: var(--ink); }
+a.event:focus-visible h3 { text-decoration-color: var(--ink); }
+/* Only with a mouse: on phones a tap would leave the underline stuck. */
+@media (hover: hover) { a.event:hover h3 { text-decoration-color: var(--ink); } }
 .event > .meta-lg, .event .when > .meta-lg { white-space: nowrap; }
 .event .when { display: grid; gap: 12px; justify-items: end; text-align: right; }
 .credits-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
@@ -183,7 +185,7 @@ footer .credits { color: var(--ink-soft); }
   .cta { white-space: nowrap; padding: 10px 14px; font-size: 10px; letter-spacing: .12em; }
   .nav-right { gap: 14px; }
   nav { justify-content: flex-end; }
-  .event { grid-template-columns: 64px minmax(0, 1fr); gap: 6px 14px; }
+  .event { grid-template-columns: 52px minmax(0, 1fr); gap: 6px 14px; }
   .event > .meta-lg:first-child { font-size: 12px; }
   .about { grid-template-columns: minmax(0, 1fr); gap: 32px; }
   .links a { width: 100%; }
@@ -202,17 +204,37 @@ footer .credits { color: var(--ink-soft); }
 .ev-photo { width: 100%; height: auto; aspect-ratio: 4 / 5; object-fit: cover; filter: grayscale(1); border-radius: 2px; margin-bottom: 8px; }
 .ev-photo.blank { display: block; height: auto; border: 1px solid var(--rule); background: rgba(31, 58, 46, .04); }
 .event-page .links { padding-top: var(--space); }
-.ev-gallery { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; padding-top: var(--space); }
-.ev-gallery img { width: 100%; height: auto; aspect-ratio: 4 / 5; object-fit: cover; border-radius: 2px; }
-.ev-gallery img.lead { grid-column: 1 / -1; aspect-ratio: 3 / 2; }
+.ev-gallery { display: grid; gap: 12px; padding-top: var(--space); }
+.ev-shot { display: block; padding: 0; border: 0; background: none; cursor: zoom-in; border-radius: 2px; overflow: hidden; }
+.ev-shot img { display: block; width: 100%; height: auto; transition: opacity .2s; }
+@media (hover: hover) { .ev-shot:hover img { opacity: .9; } }
+.ev-shot:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+/* The cover keeps its own shape (no cropped faces); the rest are a tidy grid. */
+.ev-shot.lead img { max-height: 80vh; object-fit: cover; }
+.ev-thumbs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.ev-thumbs img { aspect-ratio: 1; object-fit: cover; }
+.viewer { position: fixed; inset: 0; z-index: 50; background: var(--night); touch-action: pan-y; }
+.viewer-img { object-fit: contain; padding: 56px 12px; }
+.viewer button { position: absolute; background: none; border: 0; color: var(--linen); cursor: pointer; font: inherit; }
+.viewer-close { top: 14px; right: 16px; padding: 10px; }
+.viewer .viewer-nav {
+  top: 50%; transform: translateY(-50%); width: 44px; height: 44px; border-radius: 999px;
+  font-size: 22px; line-height: 1; background: rgba(14, 13, 11, .6);
+}
+.viewer-nav.prev { left: 10px; }
+.viewer-nav.next { right: 10px; }
+.viewer-count { position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%); color: rgba(236, 230, 216, .7); }
 .ev-quotes { display: grid; gap: 48px; padding-top: var(--space); max-width: 62ch; }
 .ev-quotes figure { margin: 0; display: grid; gap: 16px; padding-left: 28px; border-left: 1px solid var(--ink); }
 .ev-quotes blockquote { margin: 0; }
 .ev-note { margin: 24px 0 0; }
 @media (max-width: 640px) {
   .ev-speakers ul { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px 20px; }
-  .ev-gallery { grid-template-columns: minmax(0, 1fr); gap: 10px; }
-  .ev-gallery img.lead { aspect-ratio: 4 / 5; }
+  .ev-gallery, .ev-thumbs { gap: 8px; }
+  .ev-thumbs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* Role and company in normal case: spaced capitals took three lines per speaker. */
+  .credits-list, .ev-speakers li .label { text-transform: none; letter-spacing: .02em; font-weight: 400; font-size: 14px; line-height: 1.4; }
+  .event .when > .meta-lg { font-size: 12px; letter-spacing: .1em; }
 }
 
 /* ---------- form pages ---------- */

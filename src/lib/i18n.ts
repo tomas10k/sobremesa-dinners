@@ -29,6 +29,8 @@ const es = {
   evFull: "La mesa de speakers está completa.",
   evClosed: "Las aplicaciones para estudiantes abren pronto.",
   evPhotos: "Fotos de la cena",
+  phOpen: (n: number, of: number) => `Foto ${n} de ${of}`,
+  phClose: "Cerrar", phPrev: "Foto anterior", phNext: "Foto siguiente",
   // about
   about: "Quiénes somos",
   story: "Daniela y Tomás se conocieron en la universidad, en la Ciudad de México. Cada quien siguió su camino profesional, y se reencontraron en el MBA de Berkeley Haas. De lo que más extrañaban era la conexión a la latina, así que empezaron Sobremesa Dinners para hacer crecer la comunidad latina en el Bay.",
@@ -189,6 +191,8 @@ const en: Dict = {
   evFull: "The speaker table is full.",
   evClosed: "Student applications open soon.",
   evPhotos: "Photos from the dinner",
+  phOpen: (n: number, of: number) => `Photo ${n} of ${of}`,
+  phClose: "Close", phPrev: "Previous photo", phNext: "Next photo",
   about: "Who we are",
   story: "Daniela and Tomás met in college in Mexico City. Each followed their own career, and they found each other again at the Berkeley Haas MBA. What they missed most was connecting the Latino way, so they started Sobremesa Dinners to grow the Latino community in the Bay.",
   community: "Be part of the community",
