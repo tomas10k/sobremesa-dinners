@@ -152,6 +152,45 @@ export function useAdminDb() {
       return code;
     },
 
+    /** Sends one of a dinner's emails (or a test to yourself) through the admin route. */
+    sendEmail: async (body: {
+      event_id: string; kind: string; recipient_ids: string[];
+      drafts: Record<"es" | "en", { subject: string; intro: string }>; test: boolean;
+    }) => {
+      const res = await fetch("/api/admin/emails", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const text = json.message ?? (json.error === "invalid" ? "Revisa el asunto y el texto de los dos idiomas." : "No se pudo enviar.");
+        setMessage({ text, error: true });
+        return false;
+      }
+      setMessage({ text: body.test ? `Prueba enviada a ${json.test}.` : `${json.sent} correo(s) enviados.`, error: false });
+      if (!body.test) startRefresh(() => router.refresh());
+      return true;
+    },
+
+    /** For emails sent outside the app (e.g. from Gmail), so they stop showing as pending. */
+    markSent: (eventId: string, kind: string, by: "speaker_id" | "student_id", people: { id: string; email: string }[], admin: string) =>
+      run(
+        db.from("email_log").insert(people.map((p) => ({ event_id: eventId, kind, [by]: p.id, email: p.email, sent_by: `${admin} (a mano)` }))),
+        `${people.length} marcado(s) como enviados.`,
+      ),
+
+    saveDrafts: (eventId: string, kind: string, drafts: Record<"es" | "en", { subject: string; intro: string }>) =>
+      run(
+        db.from("email_drafts").upsert(
+          (["es", "en"] as const).map((lang) => ({ event_id: eventId, kind, lang, ...drafts[lang], updated_at: new Date().toISOString() })),
+        ),
+        "Texto guardado.",
+      ),
+
+    setPaid: (studentId: string, paid: boolean) =>
+      run(db.from("students").update({ paid, paid_at: paid ? new Date().toISOString() : null }).eq("id", studentId)),
+
     /** Creates a personal invite and returns its code (the link is /invitacion/<code>). */
     createInvite: async (speakerId: string, eventId: string | null, dates: string[]): Promise<string | null> => {
       const { data, error } = await db

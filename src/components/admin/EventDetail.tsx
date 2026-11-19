@@ -5,6 +5,9 @@ import { useEffect, useState } from "react";
 import { CITY_OPTS, RESPONSE_LABEL, SEAT_STATUS, STUDENT_STATUS, dayLabel, eventLabel } from "@/lib/admin/columns";
 import { formatPacific } from "@/lib/tz";
 import type { AdminData, EventRow, EventSpeaker, SpeakerRow, StudentRow } from "@/lib/admin/types";
+import { eventEmailStatus, unpaidStudents } from "@/lib/emails/due";
+import { KIND_LABEL, dueAt, type EmailKind } from "@/lib/emails/schedule";
+import { EmailComposer } from "./EmailComposer";
 import { downloadFlyer } from "./flyer";
 import { InviteButton, InviteLink } from "./Invites";
 import { NewSpeaker } from "./NewSpeaker";
@@ -13,11 +16,14 @@ import type { AdminDb } from "./useAdminDb";
 const STUDENT_SEATS = 12;
 const SEATED: StudentRow["status"][] = ["accepted", "confirmed", "attended"];
 
-export function EventDetail({ event, data, db, onClose }: {
+export function EventDetail({ event, data, db, admin, onClose, initialEmail = null }: {
   event: EventRow;
   data: AdminData;
   db: AdminDb;
+  admin: string;
   onClose: () => void;
+  /** Opens this email's composer right away (from the morning reminder's link). */
+  initialEmail?: EmailKind | null;
 }) {
   const links = data.eventSpeakers.filter((l) => l.event_id === event.id);
   const speakers = links
@@ -33,6 +39,8 @@ export function EventDetail({ event, data, db, onClose }: {
   const [applyUrl, setApplyUrl] = useState("");
   const [qr, setQr] = useState("");
   const [openEssay, setOpenEssay] = useState<string | null>(null);
+  const [composing, setComposing] = useState<EmailKind | null>(initialEmail);
+  const unpaid = new Set(unpaidStudents(event, data).map((r) => r.id));
   useEffect(() => {
     const url = `${window.location.origin}/estudiante?cena=${event.number}`;
     QRCode.toDataURL(url, { width: 600, margin: 2, color: { dark: "#1f3a2e", light: "#ffffff" } }).then((png) => {
@@ -71,6 +79,11 @@ export function EventDetail({ event, data, db, onClose }: {
           <Meter label="Speakers confirmados" value={confirmed} max={event.speakers_needed} />
           <Meter label="Estudiantes aceptados" value={seated} max={STUDENT_SEATS} note={`${students.length} aplicaron`} />
         </div>
+
+        <h3>Correos</h3>
+        <EmailsOverview event={event} data={data} onCompose={setComposing} />
+        <h3>Para los correos</h3>
+        <EmailFields key={`${event.id}-${event.price_usd}-${event.venmo_handle}-${event.hear_points.join("|")}`} event={event} data={data} db={db} />
 
         <h3>Página pública</h3>
         <DescriptionEditor key={event.id} event={event} db={db} />
@@ -144,10 +157,22 @@ export function EventDetail({ event, data, db, onClose }: {
                   {openEssay === s.id ? "Ocultar ensayo" : "Ver ensayo"}
                 </button>
                 {openEssay === s.id && <p className="a-essay">{s.essay}</p>}
+                <div className="a-public">
+                  {s.seat_confirmed_at && <span className="a-tag">confirmó su lugar</span>}
+                  {s.dietary && <span className="a-tag">dieta: {s.dietary}</span>}
+                  {!s.share_profile && <span className="a-tag">no compartir LinkedIn</span>}
+                  {unpaid.has(s.id) && <span className="a-tag a-tag-warn">48 h sin pagar</span>}
+                </div>
               </div>
-              <select value={s.status} onChange={(e) => db.update("students", s.id, { status: e.target.value })}>
-                {STUDENT_STATUS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
+              <div className="a-row">
+                <label className="a-inline">
+                  <input type="checkbox" checked={s.paid} onChange={() => db.setPaid(s.id, !s.paid)} />
+                  Pagó
+                </label>
+                <select value={s.status} onChange={(e) => db.update("students", s.id, { status: e.target.value })}>
+                  {STUDENT_STATUS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </div>
             </li>
           ))}
         </ul>
@@ -174,6 +199,75 @@ export function EventDetail({ event, data, db, onClose }: {
           </div>
         </div>
       </aside>
+      {composing && (
+        <EmailComposer event={event} kind={composing} data={data} db={db} admin={admin} onClose={() => setComposing(null)} />
+      )}
+    </div>
+  );
+}
+
+const STATE_LABEL = { none: "Sin destinatarios", waiting: "Programado", due: "Toca enviar", done: "Enviado", missed: "Ya pasó" } as const;
+
+/** The dinner's emails in order, with where each stands. */
+function EmailsOverview({ event, data, onCompose }: { event: EventRow; data: AdminData; onCompose: (k: EmailKind) => void }) {
+  return (
+    <ul className="a-list">
+      {eventEmailStatus(event, data).map((s) => {
+        const due = dueAt(s.kind, event.starts_at);
+        return (
+          <li key={s.kind}>
+            <div>
+              <strong>{KIND_LABEL[s.kind]}</strong>
+              <div className="a-muted">
+                {s.kind === "speaker_confirmed" ? "Al confirmar a cada speaker" : due ? formatPacific(due.toISOString()) : "Cuando la cena tenga fecha"}
+                {s.eligible > 0 && ` · ${s.sent} de ${s.eligible} enviados`}
+                {s.noEmail > 0 && ` · ${s.noEmail} sin email`}
+              </div>
+            </div>
+            <div className="a-row">
+              <span className={`a-tag a-state-${s.state}`}>{STATE_LABEL[s.state]}</span>
+              <button className={`a-btn ${s.state === "due" ? "primary" : ""}`} onClick={() => onCompose(s.kind)}>Revisar y enviar</button>
+            </div>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+/** Price, Venmo (Tomás's or Daniela's, per dinner) and what the students want to hear. */
+function EmailFields({ event, data, db }: { event: EventRow; data: AdminData; db: AdminDb }) {
+  const [price, setPrice] = useState(event.price_usd === null ? "" : String(event.price_usd));
+  const [venmo, setVenmo] = useState(event.venmo_handle ?? "");
+  const [points, setPoints] = useState(() => Array.from({ length: 3 }, (_, i) => event.hear_points[i] ?? ""));
+  const handles = [...new Set(data.events.map((e) => e.venmo_handle).filter(Boolean))] as string[];
+  const cleanVenmo = venmo.trim().replace(/^@/, "");
+  const next = {
+    price_usd: price.trim() === "" ? null : Number(price),
+    venmo_handle: cleanVenmo || null,
+    hear_points: points.map((p) => p.trim()).filter(Boolean),
+  };
+  const changed =
+    next.price_usd !== event.price_usd || next.venmo_handle !== event.venmo_handle ||
+    JSON.stringify(next.hear_points) !== JSON.stringify(event.hear_points);
+  return (
+    <div className="a-grid">
+      <label>Precio por estudiante (USD)
+        <input type="number" min={0} max={500} value={price} onChange={(e) => setPrice(e.target.value)} placeholder="18" />
+      </label>
+      <label>Venmo que cobra esta cena
+        <input list="venmo-handles" value={venmo} onChange={(e) => setVenmo(e.target.value)} placeholder="usuario-de-venmo" />
+        <datalist id="venmo-handles">{handles.map((h) => <option key={h} value={h} />)}</datalist>
+      </label>
+      <p className="a-muted span2">Lo que los estudiantes quieren escuchar (va en “La mesa está puesta”). Hasta 3.</p>
+      {points.map((p, i) => (
+        <label key={i} className="span2">Punto {i + 1}
+          <input value={p} maxLength={300} onChange={(e) => setPoints(points.map((x, j) => (j === i ? e.target.value : x)))} />
+        </label>
+      ))}
+      <div className="a-row">
+        <button className="a-btn primary" disabled={!changed} onClick={() => db.update("events", event.id, next)}>Guardar</button>
+      </div>
     </div>
   );
 }

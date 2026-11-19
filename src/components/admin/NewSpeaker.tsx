@@ -11,7 +11,7 @@ import type { AdminDb } from "./useAdminDb";
  * (`eventId`) they're added to it already confirmed.
  */
 export function NewSpeaker({ eventId, db }: { eventId?: string; db: AdminDb }) {
-  const blank = { name: "", company: "", role: "", industry: "", email: "", linkedin_url: "", public_profile: false };
+  const blank = { name: "", company: "", role: "", industry: "", email: "", linkedin_url: "", bio: "", public_profile: false };
   const [open, setOpen] = useState(false);
   const [f, setF] = useState(blank);
   const [dates, setDates] = useState<string[]>([]);
@@ -51,6 +51,7 @@ export function NewSpeaker({ eventId, db }: { eventId?: string; db: AdminDb }) {
         role: f.role.trim(),
         email: f.email.trim().toLowerCase() || null,
         linkedin_url: f.linkedin_url.trim() || null,
+        bio: f.bio.trim() || null,
       },
       { eventId, dates: picked },
     );
@@ -75,6 +76,9 @@ export function NewSpeaker({ eventId, db }: { eventId?: string; db: AdminDb }) {
       <label>Empresa<input required value={f.company} onChange={set("company")} /></label>
       <label>Email (opcional)<input type="email" value={f.email} onChange={set("email")} /></label>
       <label>LinkedIn (opcional)<input value={f.linkedin_url} onChange={set("linkedin_url")} /></label>
+      <label className="span2">Bio corta (opcional, va en los correos a estudiantes y speakers)
+        <input value={f.bio} maxLength={400} onChange={set("bio")} placeholder="CEO de…, Haas MBA '17. Antes en…" />
+      </label>
       <div className="span2 a-field">
         Fechas tentativas en las que puede (opcional, hasta 3). Si pones fechas, se crea su link de invitación.
         <DatesInput value={dates} onChange={setDates} />

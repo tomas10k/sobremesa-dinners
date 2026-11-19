@@ -2,10 +2,13 @@
 
 import { useState } from "react";
 import {
-  SEAT_STATUS, SPEAKER_STATUS, STUDENT_STATUS, eventColumns, eventLabel, inviteColumns, proposalColumns,
+  SEAT_STATUS, SPEAKER_STATUS, STUDENT_STATUS, eventColumns, eventLabel, feedbackAuthor, feedbackColumns,
+  inviteColumns, proposalColumns,
   proposalSpeakerColumns, proposalTopicColumns, referralColumns, speakerColumns, studentColumns,
 } from "@/lib/admin/columns";
 import type { AdminData, EventRow, EventSpeaker, TableName } from "@/lib/admin/types";
+import { dueToday } from "@/lib/emails/due";
+import { KIND_LABEL, type EmailKind } from "@/lib/emails/schedule";
 import { DataTable } from "./DataTable";
 import { EventDetail } from "./EventDetail";
 import { NewEventDialog } from "./NewEventDialog";
@@ -18,22 +21,33 @@ const TABS = [
   { key: "speakers", label: "Speakers" },
   { key: "invites", label: "Invitaciones" },
   { key: "students", label: "Estudiantes" },
+  { key: "feedback", label: "Feedback" },
   { key: "proposals", label: "Propuestas" },
   { key: "referrals", label: "Referidos" },
 ] as const;
 type Tab = (typeof TABS)[number]["key"];
 
-export function Dashboard({ data, email, initialTab = "events", initialEvent = null }: {
+export function Dashboard({ data, email, initialTab = "events", initialEvent = null, initialEmail = null }: {
   data: AdminData;
   email: string;
   initialTab?: Tab;
   initialEvent?: string | null;
+  initialEmail?: EmailKind | null;
 }) {
   const db = useAdminDb();
   const [tab, setTab] = useState<Tab>(initialTab);
   const [openEvent, setOpenEvent] = useState<string | null>(initialEvent);
   const [newEvent, setNewEvent] = useState<{ speakerIds?: string[]; studentIds?: string[] } | null>(null);
+  const [openEmail, setOpenEmail] = useState<EmailKind | null>(initialEmail);
+  const [showPending, setShowPending] = useState(false);
   const opened = data.events.find((e) => e.id === openEvent);
+  const pending = dueToday(data);
+  const pendingCount = pending.emails.length + pending.unpaid.length;
+  const openDinner = (id: string, kind: EmailKind | null = null) => {
+    setOpenEmail(kind);
+    setOpenEvent(id);
+    setShowPending(false);
+  };
 
   const save = (table: TableName) => async (row: { id: string }, key: string, value: unknown) => {
     await db.update(table, row.id, { [key]: value });
@@ -45,6 +59,32 @@ export function Dashboard({ data, email, initialTab = "events", initialEvent = n
     }
   };
 
+  /** Adds the chosen feedback's "moment or line" to its dinner's quotes (up to 3, with permission). */
+  async function addAsQuotes(ids: string[]) {
+    const rows = data.feedback.filter((f) => ids.includes(f.id) && f.highlight);
+    const blocked = rows.filter((f) => !f.quote_ok);
+    if (blocked.length) {
+      window.alert(`${blocked.length} de las respuestas no dieron permiso para citarlas.`);
+      return false;
+    }
+    if (!rows.length) {
+      window.alert("Ninguna de esas respuestas tiene “momento o frase”.");
+      return false;
+    }
+    for (const eventId of new Set(rows.map((f) => f.event_id))) {
+      const event = data.events.find((e) => e.id === eventId)!;
+      const added = rows.filter((f) => f.event_id === eventId).map((f) => ({ text: f.highlight!, author: feedbackAuthor(f, data).credit }));
+      const quotes = [...event.quotes, ...added];
+      if (quotes.length > 3) {
+        window.alert(`No. ${event.number} ya tiene ${event.quotes.length} frase(s); caben 3. Quita alguna en la cena primero.`);
+        return false;
+      }
+      if (!(await db.update("events", eventId, { quotes }))) return false;
+    }
+    db.refresh("Frases agregadas a la página.");
+    return true;
+  }
+
   function exportAll() {
     exportSheets("sobremesa-todo", [
       { name: "Cenas", columns: eventColumns(data), rows: data.events },
@@ -55,6 +95,7 @@ export function Dashboard({ data, email, initialTab = "events", initialEvent = n
       { name: "Temas propuestos", columns: proposalTopicColumns(data), rows: data.proposalTopics },
       { name: "Referidos", columns: referralColumns(data), rows: data.referrals },
       { name: "Invitaciones", columns: inviteColumns(data), rows: data.invites },
+      { name: "Feedback", columns: feedbackColumns(data), rows: data.feedback },
     ]);
   }
 
@@ -68,11 +109,36 @@ export function Dashboard({ data, email, initialTab = "events", initialEvent = n
           ))}
         </nav>
         <div className="a-user">
+          <button className={`a-btn ${pendingCount ? "primary" : ""}`} onClick={() => setShowPending(!showPending)}>
+            {pendingCount ? `${pendingCount} pendiente${pendingCount === 1 ? "" : "s"}` : "Nada pendiente"}
+          </button>
           <button className="a-btn" onClick={exportAll}>Exportar todo</button>
           <span className="a-muted">{email}</span>
           <form action="/auth/signout" method="post"><button className="a-link">Salir</button></form>
         </div>
       </header>
+
+      {showPending && (
+        <div className="a-pending">
+          {pendingCount === 0 && <p className="a-muted">No toca enviar nada hoy.</p>}
+          <ul>
+            {pending.emails.map((d) => (
+              <li key={`${d.event.id}-${d.kind}`}>
+                <button className="a-link" onClick={() => openDinner(d.event.id, d.kind)}>
+                  No. {d.event.number} — {KIND_LABEL[d.kind]}: {d.pending} por enviar{d.needsPhotos ? " (sube las fotos primero)" : ""}
+                </button>
+              </li>
+            ))}
+            {pending.unpaid.map(({ event, student }) => (
+              <li key={student.id}>
+                <button className="a-link" onClick={() => openDinner(event.id)}>
+                  No. {event.number} — {student.name}: 48 h sin pagar
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <main className="a-main">
         {tab === "events" && (
@@ -165,6 +231,24 @@ export function Dashboard({ data, email, initialTab = "events", initialEvent = n
           />
         )}
 
+        {tab === "feedback" && (
+          <DataTable
+            title="Feedback"
+            exportName="sobremesa-feedback"
+            rows={data.feedback}
+            columns={feedbackColumns(data)}
+            onSave={save("feedback")}
+            actions={(sel, clear) => (
+              <>
+                <button className="a-btn" onClick={() => addAsQuotes(sel.map((s) => s.id)).then((ok) => ok && clear())}>
+                  Usar como frase en la página
+                </button>
+                <button className="a-btn danger" onClick={() => confirmDelete("feedback", sel.map((s) => s.id), clear)}>Eliminar</button>
+              </>
+            )}
+          />
+        )}
+
         {tab === "proposals" && (
           <>
             <DataTable
@@ -214,7 +298,10 @@ export function Dashboard({ data, email, initialTab = "events", initialEvent = n
         )}
       </main>
 
-      {opened && <EventDetail event={opened} data={data} db={db} onClose={() => setOpenEvent(null)} />}
+      {opened && (
+        <EventDetail key={`${opened.id}-${openEmail}`} event={opened} data={data} db={db} admin={email} initialEmail={openEmail}
+          onClose={() => { setOpenEvent(null); setOpenEmail(null); }} />
+      )}
       {newEvent && (
         <NewEventDialog db={db} events={data.events} {...newEvent} onClose={() => setNewEvent(null)} />
       )}

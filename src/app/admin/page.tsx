@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Dashboard } from "@/components/admin/Dashboard";
+import { EMAIL_KINDS } from "@/lib/emails/schedule";
 import { sessionClient } from "@/lib/supabase/session";
 import type { AdminData } from "@/lib/admin/types";
 import "./admin.css";
@@ -8,7 +9,9 @@ import "./admin.css";
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Admin · Sobremesa", robots: { index: false, follow: false } };
 
-export default async function AdminPage() {
+/** `/admin?cena=<id>&correo=<kind>` (the morning reminder's links) opens that dinner and email. */
+export default async function AdminPage({ searchParams }: { searchParams: Promise<{ cena?: string; correo?: string }> }) {
+  const { cena, correo } = await searchParams;
   const db = await sessionClient();
   const { data: { user } } = await db.auth.getUser();
   if (!user) redirect("/admin/login");
@@ -25,7 +28,7 @@ export default async function AdminPage() {
   }
 
   // Row-level security limits every query below to admins.
-  const [events, eventSpeakers, speakers, students, proposals, proposalSpeakers, proposalTopics, referrals, invites] =
+  const [events, eventSpeakers, speakers, students, proposals, proposalSpeakers, proposalTopics, referrals, invites, emailLog, emailDrafts, feedback] =
     await Promise.all([
       db.from("events").select("*").order("number"),
       db.from("event_speakers").select("*"),
@@ -36,6 +39,9 @@ export default async function AdminPage() {
       db.from("proposal_topics").select("*"),
       db.from("referrals").select("*").order("created_at", { ascending: false }),
       db.from("invites").select("*").order("created_at", { ascending: false }),
+      db.from("email_log").select("*").order("sent_at", { ascending: false }),
+      db.from("email_drafts").select("*"),
+      db.from("feedback").select("*").order("created_at", { ascending: false }),
     ]);
 
   const data = {
@@ -48,7 +54,11 @@ export default async function AdminPage() {
     proposalTopics: proposalTopics.data ?? [],
     referrals: referrals.data ?? [],
     invites: invites.data ?? [],
+    emailLog: emailLog.data ?? [],
+    emailDrafts: emailDrafts.data ?? [],
+    feedback: feedback.data ?? [],
   } as AdminData;
 
-  return <Dashboard data={data} email={user.email ?? ""} />;
+  const email = EMAIL_KINDS.find((k) => k === correo) ?? null;
+  return <Dashboard data={data} email={user.email ?? ""} initialEvent={cena ?? null} initialEmail={email} />;
 }

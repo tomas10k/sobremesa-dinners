@@ -17,6 +17,7 @@ export function StudentForm({ events, preselect }: { events: PublicEvent[]; pres
     event_id: initialEvent, name: "", email: "", linkedin_url: "", university: "", program: "", essay: "", website: "",
   });
   const [year, setYear] = useState<(typeof YEARS)[number][]>([]);
+  const [share, setShare] = useState(true);
   const words = countWords(f.essay);
 
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
@@ -36,7 +37,7 @@ export function StudentForm({ events, preselect }: { events: PublicEvent[]; pres
         noValidate
         onSubmit={(e) => {
           e.preventDefault();
-          submit({ ...f, year: year[0] ?? "", lang });
+          submit({ ...f, year: year[0] ?? "", share_profile: share, lang });
         }}
       >
         <Honeypot value={f.website} onChange={(v) => setF({ ...f, website: v })} />
@@ -95,6 +96,10 @@ export function StudentForm({ events, preselect }: { events: PublicEvent[]; pres
               {words} / {ESSAY_MAX_WORDS} {t.words}
             </span>
           </Field>
+          <label className="check body">
+            <input type="checkbox" checked={share} onChange={(e) => setShare(e.target.checked)} />
+            <span>{t.fShare}</span>
+          </label>
         </fieldset>
 
         <SubmitRow state={state} formError={formError} />

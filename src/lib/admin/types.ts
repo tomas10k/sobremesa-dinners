@@ -15,6 +15,10 @@ export type EventRow = {
   speakers_needed: number;
   photos: string[];
   quotes: { text: string; author: string }[];
+  /** For the guest emails. */
+  price_usd: number | null;
+  venmo_handle: string | null;
+  hear_points: string[];
   notes: string | null;
 };
 
@@ -24,6 +28,8 @@ export type EventSpeaker = {
   created_at: string;
   status: "interested" | "maybe" | "invited" | "confirmed" | "declined";
   source: "form" | "admin";
+  /** Behind their personal feedback link. */
+  code: string;
 };
 
 export type SpeakerRow = {
@@ -51,6 +57,8 @@ export type SpeakerRow = {
   /** Agreed to show their name and photo on the public site. */
   public_profile: boolean;
   photo_url: string | null;
+  /** One or two lines, shown to students and the other speakers in the emails. */
+  bio: string | null;
   notes: string | null;
 };
 
@@ -67,6 +75,14 @@ export type StudentRow = {
   essay: string;
   lang: string;
   status: "applied" | "accepted" | "waitlist" | "rejected" | "confirmed" | "attended";
+  /** Behind their confirm-your-seat and feedback links. */
+  code: string;
+  /** Agreed to share their name and LinkedIn with the speakers. */
+  share_profile: boolean;
+  dietary: string | null;
+  seat_confirmed_at: string | null;
+  paid: boolean;
+  paid_at: string | null;
   notes: string | null;
 };
 
@@ -123,6 +139,45 @@ export type InviteRow = {
   responded_at: string | null;
 };
 
+export type EmailLogRow = {
+  id: string;
+  sent_at: string;
+  event_id: string;
+  kind: string;
+  speaker_id: string | null;
+  student_id: string | null;
+  email: string;
+  sent_by: string;
+  provider_id: string | null;
+};
+
+export type EmailDraftRow = {
+  event_id: string;
+  kind: string;
+  lang: "es" | "en";
+  subject: string;
+  intro: string;
+  updated_at: string;
+};
+
+export type FeedbackRow = {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  event_id: string;
+  speaker_id: string | null;
+  student_id: string | null;
+  overall: number;
+  food: number | null;
+  come_back: "yes" | "maybe" | "no" | null;
+  more_of: string | null;
+  less_of: string | null;
+  improve: string | null;
+  refer: string | null;
+  highlight: string | null;
+  quote_ok: boolean;
+};
+
 export type AdminData = {
   events: EventRow[];
   eventSpeakers: EventSpeaker[];
@@ -133,8 +188,11 @@ export type AdminData = {
   proposalTopics: ProposalTopicRow[];
   referrals: ReferralRow[];
   invites: InviteRow[];
+  emailLog: EmailLogRow[];
+  emailDrafts: EmailDraftRow[];
+  feedback: FeedbackRow[];
 };
 
 export type TableName =
   | "events" | "speakers" | "students" | "proposals"
-  | "proposal_speakers" | "proposal_topics" | "referrals" | "invites";
+  | "proposal_speakers" | "proposal_topics" | "referrals" | "invites" | "feedback";
