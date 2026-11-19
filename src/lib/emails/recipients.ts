@@ -58,11 +58,12 @@ export type EmailContext = {
   paid: boolean;
   event: Pick<
     EventRow,
-    "number" | "title_es" | "title_en" | "starts_at" | "city" | "venue" | "hear_points" | "photos" | "price_usd" | "venmo_handle"
+    | "number" | "title_es" | "title_en" | "starts_at" | "city" | "venue" | "hear_points" | "photos"
+    | "price_usd" | "venmo_handle" | "whatsapp_on" | "whatsapp_url"
   >;
   /** Confirmed speakers, without the recipient. */
   speakers: { name: string; role: string; company: string; bio: string | null; linkedin_url: string | null }[];
-  /** Accepted students. LinkedIn only for those who agreed to share it. */
+  /** Accepted students, with their LinkedIn when they gave one. */
   students: { name: string; year: string; linkedin_url: string | null }[];
 };
 
@@ -76,7 +77,7 @@ export function emailContext(
   const students = data.students
     .filter((s) => s.event_id === event.id && ["accepted", "confirmed", "attended"].includes(s.status))
     .sort((a, b) => a.name.localeCompare(b.name, "es"))
-    .map((s) => ({ name: s.name, year: s.year, linkedin_url: s.share_profile ? s.linkedin_url : null }));
+    .map((s) => ({ name: s.name, year: s.year, linkedin_url: s.linkedin_url }));
   return {
     site, kind, lang: recipient.lang, firstName: firstName(recipient.name), code: recipient.code, paid: recipient.paid,
     event, speakers, students,

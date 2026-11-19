@@ -144,7 +144,6 @@ export function studentColumns(data: AdminData): Col<StudentRow>[] {
     { key: "paid", label: "Pagó", type: "bool", filter: true },
     { key: "seat_confirmed_at", label: "Confirmó lugar", type: "timestamp", readOnly: true },
     { key: "dietary", label: "Dieta", type: "text" },
-    { key: "share_profile", label: "Comparte LinkedIn", type: "bool", filter: true },
     { key: "email", label: "Email", type: "text", width: 200 },
     { key: "university", label: "Universidad", type: "text", filter: true },
     { key: "program", label: "Programa", type: "text", filter: true },

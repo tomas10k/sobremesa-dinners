@@ -22,11 +22,19 @@ export type Guest = {
     city: "berkeley" | "sf" | null;
     price_usd: number | null;
     venmo_handle: string | null;
+    /** Only when the community is switched on for this dinner. */
+    whatsapp_url: string | null;
   };
   feedback: Record<string, unknown> | null;
 };
 
-const EVENT = "id, number, title_es, title_en, starts_at, city, price_usd, venmo_handle";
+const EVENT = "id, number, title_es, title_en, starts_at, city, price_usd, venmo_handle, whatsapp_on, whatsapp_url";
+
+/** The community link leaves the server only while it's switched on. */
+function publicEvent(raw: unknown): Guest["event"] {
+  const { whatsapp_on, whatsapp_url, ...e } = raw as Guest["event"] & { whatsapp_on: boolean };
+  return { ...e, whatsapp_url: whatsapp_on ? whatsapp_url : null };
+}
 const first = (name: string) => name.trim().split(/\s+/)[0] ?? "";
 
 /** Finds a student or a speaker by their personal code (server key; codes are unguessable). */
@@ -39,7 +47,7 @@ export async function findGuest(code: string, db: SupabaseClient | null = servic
     .eq("code", code)
     .maybeSingle();
   if (student) {
-    const event = student.events as unknown as Guest["event"];
+    const event = publicEvent(student.events);
     const { data: feedback } = await db.from("feedback").select("*").eq("student_id", student.id).eq("event_id", event.id).maybeSingle();
     return {
       type: "student", id: student.id, code, firstName: first(student.name), status: student.status,
@@ -54,7 +62,7 @@ export async function findGuest(code: string, db: SupabaseClient | null = servic
     .maybeSingle();
   if (!link) return null;
   const speaker = link.speakers as unknown as { id: string; name: string };
-  const event = link.events as unknown as Guest["event"];
+  const event = publicEvent(link.events);
   const { data: feedback } = await db.from("feedback").select("*").eq("speaker_id", speaker.id).eq("event_id", event.id).maybeSingle();
   return {
     type: "speaker", id: speaker.id, code, firstName: first(speaker.name), status: null,

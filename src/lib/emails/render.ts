@@ -36,6 +36,10 @@ export function venmoLink(handle: string, amount: number, note: string): string 
   return `https://account.venmo.com/payment-link?${q}`;
 }
 
+/** The community link, only while it's switched on for this dinner. */
+export const whatsappLink = (e: { whatsapp_on: boolean; whatsapp_url: string | null }) =>
+  e.whatsapp_on && e.whatsapp_url ? e.whatsapp_url : null;
+
 function calendarLink(ctx: EmailContext, withAddress: boolean): string | null {
   const { starts_at, number, city, venue } = ctx.event;
   if (!starts_at) return null;
@@ -150,9 +154,9 @@ export function renderEmail(ctx: EmailContext, draft: Draft): { subject: string;
     );
   }
 
-  // ---- speakers
-  if (!after && kind !== "speaker_confirmed" && ctx.speakers.length) {
-    const title = forStudent ? L.yourSpeakers : L.fellow;
+  // ---- the other speakers (speakers, before)
+  if (!forStudent && !after && kind !== "speaker_confirmed" && ctx.speakers.length) {
+    const title = L.fellow;
     add(
       rule + section(label(title) + ctx.speakers.map((s, i) =>
         `<div style="padding:${i ? "18px" : "0"} 0 18px;${i < ctx.speakers.length - 1 ? `border-bottom:1px solid ${LINE};` : ""}">` +
@@ -194,6 +198,11 @@ export function renderEmail(ctx: EmailContext, draft: Draft): { subject: string;
     const url = `${ctx.site}/feedback/${ctx.code}`;
     add(rule + section(label(L.feedback) + para(esc(L.feedbackIntro)) + `<div style="height:6px"></div>` + button(url, L.feedbackButton)),
       `${L.feedback}: ${L.feedbackIntro}\n${url}\n`);
+    const wa = whatsappLink(event);
+    if (wa) {
+      add(rule + section(label(L.whatsapp) + para(esc(L.whatsappIntro)) + `<div style="height:6px"></div>` + button(wa, L.whatsappButton)),
+        `${L.whatsapp}: ${L.whatsappIntro}\n${wa}\n`);
+    }
   }
 
   // ---- sign-off and footer

@@ -76,7 +76,7 @@ export function NewSpeaker({ eventId, db }: { eventId?: string; db: AdminDb }) {
       <label>Empresa<input required value={f.company} onChange={set("company")} /></label>
       <label>Email (opcional)<input type="email" value={f.email} onChange={set("email")} /></label>
       <label>LinkedIn (opcional)<input value={f.linkedin_url} onChange={set("linkedin_url")} /></label>
-      <label className="span2">Bio corta (opcional, va en los correos a estudiantes y speakers)
+      <label className="span2">Bio corta (opcional, la ven los otros speakers en los correos)
         <input value={f.bio} maxLength={400} onChange={set("bio")} placeholder="CEO de…, Haas MBA '17. Antes en…" />
       </label>
       <div className="span2 a-field">

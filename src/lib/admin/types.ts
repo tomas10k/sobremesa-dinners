@@ -19,6 +19,9 @@ export type EventRow = {
   price_usd: number | null;
   venmo_handle: string | null;
   hear_points: string[];
+  /** Invite to the WhatsApp community in the thank-yous, once all the speakers agreed. */
+  whatsapp_on: boolean;
+  whatsapp_url: string | null;
   notes: string | null;
 };
 
@@ -57,7 +60,7 @@ export type SpeakerRow = {
   /** Agreed to show their name and photo on the public site. */
   public_profile: boolean;
   photo_url: string | null;
-  /** One or two lines, shown to students and the other speakers in the emails. */
+  /** One or two lines, shown to the other speakers in the emails. */
   bio: string | null;
   notes: string | null;
 };
@@ -77,8 +80,6 @@ export type StudentRow = {
   status: "applied" | "accepted" | "waitlist" | "rejected" | "confirmed" | "attended";
   /** Behind their confirm-your-seat and feedback links. */
   code: string;
-  /** Agreed to share their name and LinkedIn with the speakers. */
-  share_profile: boolean;
   dietary: string | null;
   seat_confirmed_at: string | null;
   paid: boolean;

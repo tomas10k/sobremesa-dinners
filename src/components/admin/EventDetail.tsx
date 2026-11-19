@@ -83,7 +83,7 @@ export function EventDetail({ event, data, db, admin, onClose, initialEmail = nu
         <h3>Correos</h3>
         <EmailsOverview event={event} data={data} onCompose={setComposing} />
         <h3>Para los correos</h3>
-        <EmailFields key={`${event.id}-${event.price_usd}-${event.venmo_handle}-${event.hear_points.join("|")}`} event={event} data={data} db={db} />
+        <EmailFields key={`${event.id}-${event.price_usd}-${event.venmo_handle}-${event.hear_points.join("|")}-${event.whatsapp_on}-${event.whatsapp_url}`} event={event} data={data} db={db} />
 
         <h3>Página pública</h3>
         <DescriptionEditor key={event.id} event={event} db={db} />
@@ -160,7 +160,6 @@ export function EventDetail({ event, data, db, admin, onClose, initialEmail = nu
                 <div className="a-public">
                   {s.seat_confirmed_at && <span className="a-tag">confirmó su lugar</span>}
                   {s.dietary && <span className="a-tag">dieta: {s.dietary}</span>}
-                  {!s.share_profile && <span className="a-tag">no compartir LinkedIn</span>}
                   {unpaid.has(s.id) && <span className="a-tag a-tag-warn">48 h sin pagar</span>}
                 </div>
               </div>
@@ -240,16 +239,23 @@ function EmailFields({ event, data, db }: { event: EventRow; data: AdminData; db
   const [price, setPrice] = useState(event.price_usd === null ? "" : String(event.price_usd));
   const [venmo, setVenmo] = useState(event.venmo_handle ?? "");
   const [points, setPoints] = useState(() => Array.from({ length: 3 }, (_, i) => event.hear_points[i] ?? ""));
+  // The community link rarely changes: start from the last dinner that had one.
+  const lastLink = data.events.find((e) => e.whatsapp_url)?.whatsapp_url ?? "";
+  const [waOn, setWaOn] = useState(event.whatsapp_on);
+  const [waUrl, setWaUrl] = useState(event.whatsapp_url ?? lastLink);
   const handles = [...new Set(data.events.map((e) => e.venmo_handle).filter(Boolean))] as string[];
   const cleanVenmo = venmo.trim().replace(/^@/, "");
   const next = {
     price_usd: price.trim() === "" ? null : Number(price),
     venmo_handle: cleanVenmo || null,
     hear_points: points.map((p) => p.trim()).filter(Boolean),
+    whatsapp_on: waOn && Boolean(waUrl.trim()),
+    whatsapp_url: waUrl.trim() || null,
   };
   const changed =
     next.price_usd !== event.price_usd || next.venmo_handle !== event.venmo_handle ||
-    JSON.stringify(next.hear_points) !== JSON.stringify(event.hear_points);
+    JSON.stringify(next.hear_points) !== JSON.stringify(event.hear_points) ||
+    next.whatsapp_on !== event.whatsapp_on || next.whatsapp_url !== event.whatsapp_url;
   return (
     <div className="a-grid">
       <label>Precio por estudiante (USD)
@@ -265,6 +271,13 @@ function EmailFields({ event, data, db }: { event: EventRow; data: AdminData; db
           <input value={p} maxLength={300} onChange={(e) => setPoints(points.map((x, j) => (j === i ? e.target.value : x)))} />
         </label>
       ))}
+      <label className="a-inline span2">
+        <input type="checkbox" checked={waOn} onChange={(e) => setWaOn(e.target.checked)} />
+        Invitar a la comunidad de WhatsApp en los “gracias” (solo si todos los speakers de esta cena aceptaron)
+      </label>
+      <label className="span2">Link de la comunidad
+        <input value={waUrl} onChange={(e) => setWaUrl(e.target.value)} placeholder="https://chat.whatsapp.com/…" />
+      </label>
       <div className="a-row">
         <button className="a-btn primary" disabled={!changed} onClick={() => db.update("events", event.id, next)}>Guardar</button>
       </div>

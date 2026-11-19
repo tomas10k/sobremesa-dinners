@@ -30,7 +30,21 @@ export function FeedbackForm({ guest }: { guest: Guest }) {
   const title = `${t.fbTitle} ${guest.firstName}`.trim();
   const labels = { more_of: t.fbMore, less_of: t.fbLess, improve: t.fbImprove, refer: t.fbRefer, highlight: t.fbHighlight };
 
-  if (state === "done") return <FormPage title={title} lede={t.fbLede}><p className="done body">{t.fbDone}</p></FormPage>;
+  const whatsapp = ev.whatsapp_url && (
+    <div className="cost">
+      <p className="body">{t.fbWhatsapp}</p>
+      <a className="btn label pay" href={ev.whatsapp_url} target="_blank" rel="noopener noreferrer">{t.fbWhatsappButton}</a>
+    </div>
+  );
+
+  if (state === "done") {
+    return (
+      <FormPage title={title} lede={t.fbLede}>
+        <p className="done body">{t.fbDone}</p>
+        {whatsapp}
+      </FormPage>
+    );
+  }
 
   return (
     <FormPage title={title} lede={t.fbLede}>
@@ -90,6 +104,7 @@ export function FeedbackForm({ guest }: { guest: Guest }) {
         </fieldset>
 
         <SubmitRow state={state} formError={formError} />
+        {whatsapp}
       </form>
     </FormPage>
   );

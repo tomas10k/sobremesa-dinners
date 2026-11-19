@@ -6,7 +6,10 @@
 alter table public.events
   add column price_usd int check (price_usd between 0 and 500),
   add column venmo_handle text check (venmo_handle ~ '^[A-Za-z0-9_-]{1,40}$'),
-  add column hear_points text[] not null default '{}' check (cardinality(hear_points) <= 3);
+  add column hear_points text[] not null default '{}' check (cardinality(hear_points) <= 3),
+  -- The WhatsApp community goes in the thank-yous only once every speaker agreed.
+  add column whatsapp_on boolean not null default false,
+  add column whatsapp_url text check (whatsapp_url ~ '^https://(chat\.whatsapp\.com|wa\.me|whatsapp\.com)/');
 
 -- ---------------------------------------------------------------- people
 alter table public.speakers
@@ -19,7 +22,6 @@ alter table public.event_speakers
 
 alter table public.students
   add column code text not null unique default left(replace(gen_random_uuid()::text, '-', ''), 16),
-  add column share_profile boolean not null default false,  -- OK to share name and LinkedIn with speakers
   add column dietary text check (char_length(dietary) <= 200),
   add column seat_confirmed_at timestamptz,
   add column paid boolean not null default false,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { confirmSeatSchema, feedbackSchema, studentSchema } from "@/lib/schemas";
+import { confirmSeatSchema, feedbackSchema } from "@/lib/schemas";
 
 const code = "0123456789abcdef";
 
@@ -31,12 +31,3 @@ describe("confirmSeatSchema", () => {
   });
 });
 
-describe("studentSchema consent", () => {
-  it("does not share a student's profile unless they say so", () => {
-    const r = studentSchema.parse({
-      event_id: "11111111-1111-4111-8111-111111111111", name: "Luis", email: "l@berkeley.edu",
-      university: "Haas", program: "MBA", year: "1", essay: "Hola",
-    });
-    expect(r.share_profile).toBe(false);
-  });
-});

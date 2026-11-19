@@ -112,7 +112,6 @@ const es = {
   invDoneYes: "¡Gracias! Te escribimos pronto con los detalles.",
   invDoneNo: "Gracias por avisarnos. Te buscamos otra fecha.",
   // confirm seat + feedback (personal links from the emails)
-  fShare: "Está bien compartir mi nombre y LinkedIn con los speakers de la cena",
   cfTitle: "Confirma tu lugar",
   cfLede: "Paga por Venmo y confirma aquí para apartar tu lugar en la mesa.",
   cfPay: "Pago",
@@ -138,6 +137,8 @@ const es = {
   fbHighlight: "¿Un momento o una frase de la noche?",
   fbQuote: "Pueden citarme en la página de Sobremesa",
   fbDone: "¡Gracias! Lo leemos todo.",
+  fbWhatsapp: "Sigamos en contacto: únete a la comunidad de WhatsApp de Sobremesa.",
+  fbWhatsappButton: "Unirme al WhatsApp",
   // student form
   stTitle: "Aplicar a una cena",
   stLede: "Cada cena tiene 7 a 12 lugares para estudiantes. Elegimos según tu respuesta.",
@@ -264,7 +265,6 @@ const en: Dict = {
   invAnswered: "You already answered. You can change your answer here.",
   invDoneYes: "Thank you! We’ll write to you soon with the details.",
   invDoneNo: "Thanks for letting us know. We’ll find you another date.",
-  fShare: "It’s OK to share my name and LinkedIn with the dinner’s speakers",
   cfTitle: "Confirm your seat",
   cfLede: "Pay by Venmo and confirm here to hold your seat at the table.",
   cfPay: "Payment",
@@ -290,6 +290,8 @@ const en: Dict = {
   fbHighlight: "A moment or a line from the night?",
   fbQuote: "You can quote me on the Sobremesa site",
   fbDone: "Thank you! We read every answer.",
+  fbWhatsapp: "Let’s keep in touch: join the Sobremesa WhatsApp community.",
+  fbWhatsappButton: "Join the WhatsApp",
   stTitle: "Apply to a dinner",
   stLede: "Each dinner has 7 to 12 seats for students. We choose based on your answer.",
   stCostLabel: "Cost",

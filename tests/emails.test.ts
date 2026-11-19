@@ -22,14 +22,14 @@ const link = (speaker_id: string, status: EventSpeaker["status"] = "confirmed") 
 const student = (id: string, extra: Partial<StudentRow> = {}) =>
   ({
     id, event_id: "e1", name: `Student ${id}`, email: `${id}@berkeley.edu`, year: "1", status: "accepted",
-    lang: "es", code: `scode${id}`, paid: false, share_profile: true, linkedin_url: `https://linkedin.com/in/${id}`, ...extra,
+    lang: "es", code: `scode${id}`, paid: false, linkedin_url: `https://linkedin.com/in/${id}`, ...extra,
   }) as StudentRow;
 
 const data = (over: Partial<EmailData> = {}): EmailData => ({
   events: [event],
   speakers: [speaker("a"), speaker("b"), speaker("c", { email: null })],
   eventSpeakers: [link("a"), link("b"), link("c"), link("d", "invited")],
-  students: [student("s1"), student("s2", { share_profile: false, paid: true }), student("s3", { status: "waitlist" })],
+  students: [student("s1"), student("s2", { linkedin_url: null, paid: true }), student("s3", { status: "waitlist" })],
   emailLog: [],
   ...over,
 });
@@ -92,7 +92,7 @@ describe("emailContext", () => {
     const ctx = emailContext("speaker_week", event, recipientsFor("speaker_week", event, d)[0], d, SITE);
     expect(ctx.speakers.map((s) => s.name)).toEqual(["Speaker b", "Speaker c"]);
   });
-  it("shares a student's LinkedIn only if they agreed", () => {
+  it("lists accepted students with their LinkedIn, not the waitlist", () => {
     const d = data();
     const ctx = emailContext("speaker_week", event, recipientsFor("speaker_week", event, d)[0], d, SITE);
     expect(ctx.students.find((s) => s.name === "Student s1")?.linkedin_url).toContain("linkedin.com");
@@ -136,6 +136,19 @@ describe("renderEmail", () => {
     const { html } = renderEmail(emailContext("speaker_after", after, r, d, SITE), defaultDraft({ kind: "speaker_after", lang: "en" }));
     expect(html).toContain(`${SITE}/feedback/code-a`);
     expect(html).toContain("p.jpg");
+  });
+  it("invites to the WhatsApp community only when it's switched on", () => {
+    const withLink = { ...event, whatsapp_url: "https://chat.whatsapp.com/abc" };
+    const html = (e: EventRow) => {
+      const d = data({ events: [e] });
+      const r = recipientsFor("student_after", e, d)[0];
+      return renderEmail(emailContext("student_after", e, r, d, SITE), defaultDraft({ kind: "student_after", lang: "es" })).html;
+    };
+    expect(html({ ...withLink, whatsapp_on: false } as EventRow)).not.toContain("chat.whatsapp.com");
+    expect(html({ ...withLink, whatsapp_on: true } as EventRow)).toContain("chat.whatsapp.com/abc");
+  });
+  it("doesn't list speakers in student emails", () => {
+    expect(render("student_week", "s1").html).not.toContain("Speaker a");
   });
   it("escapes what people typed", () => {
     const d = data({ speakers: [speaker("a", { name: "<b>Ana</b>" }), speaker("b", { bio: "R&D <script>" })] });

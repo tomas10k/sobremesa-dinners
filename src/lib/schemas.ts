@@ -95,7 +95,6 @@ export const studentSchema = z.object({
     .min(1)
     .max(3000)
     .refine((v) => countWords(v) <= ESSAY_MAX_WORDS, "too_long"),
-  share_profile: z.boolean().default(false),
   lang: z.enum(["es", "en"]).default("es"),
   website: honeypot,
 });
