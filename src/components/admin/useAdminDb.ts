@@ -180,6 +180,20 @@ export function useAdminDb() {
         `${people.length} marcado(s) como enviados.`,
       ),
 
+    /** One sample of each of the dinner's 7 emails, to both admins only. */
+    sendSamples: async (eventId: string, lang: "es" | "en") => {
+      const res = await fetch("/api/admin/emails/samples", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ event_id: eventId, lang }),
+      });
+      const json = await res.json().catch(() => ({}));
+      setMessage(res.ok
+        ? { text: `Muestras (${lang.toUpperCase()}) enviadas a ${json.to.join(" y ")}.`, error: false }
+        : { text: json.message ?? "No se pudieron mandar las muestras.", error: true });
+      return res.ok;
+    },
+
     saveDrafts: (eventId: string, kind: string, drafts: Record<"es" | "en", { subject: string; intro: string }>) =>
       run(
         db.from("email_drafts").upsert(
