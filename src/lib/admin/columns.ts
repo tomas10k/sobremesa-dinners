@@ -2,7 +2,7 @@ import { dictionaries } from "@/lib/i18n";
 import { CITIES, INDUSTRIES, MOTIVATIONS, WEEKDAYS, YEARS, PROPOSAL_KINDS } from "@/lib/schemas";
 import { formatPacific } from "@/lib/tz";
 import type {
-  AdminData, EventRow, ProposalRow, ProposalSpeakerRow, ProposalTopicRow, ReferralRow, SpeakerRow, StudentRow,
+  AdminData, EventRow, InviteRow, ProposalRow, ProposalSpeakerRow, ProposalTopicRow, ReferralRow, SpeakerRow, StudentRow,
 } from "./types";
 
 const t = dictionaries.es;
@@ -47,6 +47,23 @@ const WEEKDAY_OPTS = opts(WEEKDAYS, (v) => t[v as "mon"]);
 const MOTIVATION_OPTS = opts(MOTIVATIONS, (v) => t[v as "give_back"]);
 const YEAR_OPTS = opts(YEARS, (v) => (v === "1" ? "1er año" : "2o año"));
 const KIND_OPTS = opts(PROPOSAL_KINDS, (v) => t[`kind_${v}` as "kind_both"]);
+
+export const RESPONSE_LABEL: Record<InviteRow["response"], string> = {
+  pending: "Sin respuesta",
+  accepted: "Aceptó",
+  declined: "Ninguna fecha",
+};
+const RESPONSE_OPTS = opts(Object.keys(RESPONSE_LABEL), (v) => RESPONSE_LABEL[v as InviteRow["response"]]);
+
+export const inviteUrl = (code: string) =>
+  `${typeof window === "undefined" ? "" : window.location.origin}/invitacion/${code}`;
+
+/** "mar 9 dic", for plain dates like "2026-12-09". */
+export function dayLabel(date: string): string {
+  return new Intl.DateTimeFormat("es-MX", { timeZone: "UTC", weekday: "short", day: "numeric", month: "short" })
+    .format(new Date(`${date}T00:00:00Z`))
+    .replace(/\./g, "");
+}
 
 export const eventLabel = (e: Pick<EventRow, "number" | "title_es">) => `No. ${e.number} — ${e.title_es}`;
 
@@ -161,6 +178,25 @@ export function proposalTopicColumns(data: AdminData): Col<ProposalTopicRow>[] {
     { key: "title", label: "Tema propuesto", type: "text", width: 240 },
     { key: "description", label: "Descripción", type: "long", width: 320 },
     { key: "proposal_id", label: "Lo propuso", type: "text", readOnly: true, get: (r) => proposer(data)(r.proposal_id) },
+  ];
+}
+
+export function inviteColumns(data: AdminData): Col<InviteRow>[] {
+  return [
+    {
+      key: "speaker_id", label: "Speaker", type: "text", readOnly: true, width: 180,
+      get: (r) => data.speakers.find((s) => s.id === r.speaker_id)?.name ?? "",
+    },
+    {
+      key: "event_id", label: "Cena", type: "select", filter: true, width: 220,
+      options: data.events.map((e) => ({ value: e.id, label: eventLabel(e) })),
+    },
+    { key: "dates", label: "Fechas propuestas", type: "text", readOnly: true, width: 240, get: (r) => r.dates.map(dayLabel).join(" · ") },
+    { key: "response", label: "Respuesta", type: "select", options: RESPONSE_OPTS, filter: true },
+    { key: "chosen_date", label: "Eligió", type: "text", readOnly: true, get: (r) => (r.chosen_date ? dayLabel(r.chosen_date) : "") },
+    { key: "message", label: "Mensaje", type: "long", readOnly: true, width: 260 },
+    { key: "code", label: "Link", type: "url", readOnly: true, width: 260, get: (r) => inviteUrl(r.code) },
+    { key: "created_at", label: "Creada", type: "timestamp", readOnly: true },
   ];
 }
 

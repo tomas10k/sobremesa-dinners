@@ -128,6 +128,14 @@ export const proposalSchema = z
       ctx.addIssue({ code: "custom", path: ["topics"], message: "required" });
   });
 
+/** A speaker's answer to their invite: one of the proposed dates, or none of them. */
+export const inviteAnswerSchema = z.object({
+  code: z.string().regex(/^[0-9a-f]{16}$/),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
+  message: optionalText(1000),
+  website: honeypot,
+});
+
 export type SpeakerInput = z.input<typeof speakerSchema>;
 export type StudentInput = z.input<typeof studentSchema>;
 export type ProposalInput = z.input<typeof proposalSchema>;

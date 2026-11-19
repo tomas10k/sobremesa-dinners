@@ -7,12 +7,14 @@ const securityHeaders = [
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
 ];
 
-// Speaker photos live in the project's public "speaker-photos" storage bucket.
+// Speaker and event photos live in the project's public storage buckets.
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
 const nextConfig: NextConfig = {
   images: {
-    remotePatterns: supabaseUrl ? [new URL(`${supabaseUrl}/storage/v1/object/public/speaker-photos/**`)] : [],
+    remotePatterns: supabaseUrl
+      ? ["speaker-photos", "event-photos"].map((b) => new URL(`${supabaseUrl}/storage/v1/object/public/${b}/**`))
+      : [],
   },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];

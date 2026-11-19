@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import {
-  SEAT_STATUS, SPEAKER_STATUS, STUDENT_STATUS, eventColumns, eventLabel, proposalColumns,
+  SEAT_STATUS, SPEAKER_STATUS, STUDENT_STATUS, eventColumns, eventLabel, inviteColumns, proposalColumns,
   proposalSpeakerColumns, proposalTopicColumns, referralColumns, speakerColumns, studentColumns,
 } from "@/lib/admin/columns";
 import type { AdminData, EventRow, EventSpeaker, TableName } from "@/lib/admin/types";
@@ -16,6 +16,7 @@ import { useAdminDb } from "./useAdminDb";
 const TABS = [
   { key: "events", label: "Cenas" },
   { key: "speakers", label: "Speakers" },
+  { key: "invites", label: "Invitaciones" },
   { key: "students", label: "Estudiantes" },
   { key: "proposals", label: "Propuestas" },
   { key: "referrals", label: "Referidos" },
@@ -53,6 +54,7 @@ export function Dashboard({ data, email, initialTab = "events", initialEvent = n
       { name: "Speakers propuestos", columns: proposalSpeakerColumns(data), rows: data.proposalSpeakers },
       { name: "Temas propuestos", columns: proposalTopicColumns(data), rows: data.proposalTopics },
       { name: "Referidos", columns: referralColumns(data), rows: data.referrals },
+      { name: "Invitaciones", columns: inviteColumns(data), rows: data.invites },
     ]);
   }
 
@@ -116,6 +118,24 @@ export function Dashboard({ data, email, initialTab = "events", initialEvent = n
                   </>
                 );
               }}
+            />
+          </>
+        )}
+
+        {tab === "invites" && (
+          <>
+            <p className="a-muted">
+              Para crear una invitación: agrega un speaker con fechas tentativas, o usa “Invitar con fechas” dentro de una cena.
+            </p>
+            <DataTable
+              title="Invitaciones"
+              exportName="sobremesa-invitaciones"
+              rows={data.invites}
+              columns={inviteColumns(data)}
+              onSave={save("invites")}
+              actions={(sel, clear) => (
+                <button className="a-btn danger" onClick={() => confirmDelete("invites", sel.map((s) => s.id), clear)}>Eliminar</button>
+              )}
             />
           </>
         )}

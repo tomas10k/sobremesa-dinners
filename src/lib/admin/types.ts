@@ -13,6 +13,8 @@ export type EventRow = {
   status: "draft" | "upcoming" | "past";
   applications_open: boolean;
   speakers_needed: number;
+  photos: string[];
+  quotes: { text: string; author: string }[];
   notes: string | null;
 };
 
@@ -107,6 +109,20 @@ export type ReferralRow = {
   notes: string | null;
 };
 
+/** A personal invite: up to three proposed dates, answered at /invitacion/<code>. */
+export type InviteRow = {
+  id: string;
+  created_at: string;
+  code: string;
+  speaker_id: string;
+  event_id: string | null;
+  dates: string[];
+  response: "pending" | "accepted" | "declined";
+  chosen_date: string | null;
+  message: string | null;
+  responded_at: string | null;
+};
+
 export type AdminData = {
   events: EventRow[];
   eventSpeakers: EventSpeaker[];
@@ -116,8 +132,9 @@ export type AdminData = {
   proposalSpeakers: ProposalSpeakerRow[];
   proposalTopics: ProposalTopicRow[];
   referrals: ReferralRow[];
+  invites: InviteRow[];
 };
 
 export type TableName =
   | "events" | "speakers" | "students" | "proposals"
-  | "proposal_speakers" | "proposal_topics" | "referrals";
+  | "proposal_speakers" | "proposal_topics" | "referrals" | "invites";

@@ -35,30 +35,60 @@ export function EventPage({ event }: { event: PublicEvent }) {
 
         {description && <p className="body ev-desc">{description}</p>}
 
-        <section className="ev-speakers">
-          <h3 className="meta-lg">{t.evSpeakers}</h3>
-          {event.speakers.length === 0 ? (
-            <p className="body soft">{t.evSpeakersSoon}</p>
-          ) : (
-            <ul>
-              {event.speakers.map((s, i) => (
-                <li key={i}>
-                  {s.photo_url ? (
-                    <Image className="ev-photo" src={s.photo_url} alt={s.name ?? ""} width={320} height={400} sizes="(max-width: 640px) 40vw, 240px" />
-                  ) : (
-                    anyPhoto && <div className="ev-photo blank" aria-hidden="true" />
-                  )}
-                  {s.name && <span className="body">{s.name}</span>}
-                  <span className={s.name ? "label soft" : "body"}>{s.role}</span>
-                  <span className="label soft">{s.company}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-          {join && event.speakers.length > 0 && (
-            <p className="label soft">{t.evSeatsLeft}: {event.seats_left}</p>
-          )}
-        </section>
+        {/* After the dinner: photos, then what people said. */}
+        {!upcoming && event.photos.length > 0 && (
+          <section className="ev-gallery" aria-label={t.evPhotos}>
+            {event.photos.map((src, i) => (
+              <Image
+                key={src}
+                className={i === 0 ? "lead" : ""}
+                src={src}
+                alt=""
+                width={i === 0 ? 1600 : 800}
+                height={i === 0 ? 1067 : 1000}
+                sizes={i === 0 ? "(max-width: 1228px) 100vw, 1180px" : "(max-width: 640px) 100vw, 590px"}
+                priority={i === 0}
+              />
+            ))}
+          </section>
+        )}
+        {!upcoming && event.quotes.length > 0 && (
+          <section className="ev-quotes">
+            {event.quotes.map((q, i) => (
+              <figure key={i}>
+                <blockquote className="body">“{q.text}”</blockquote>
+                {q.author && <figcaption className="label soft">— {q.author}</figcaption>}
+              </figure>
+            ))}
+          </section>
+        )}
+
+        {(upcoming || event.speakers.length > 0) && (
+          <section className="ev-speakers">
+            <h3 className="meta-lg">{t.evSpeakers}</h3>
+            {event.speakers.length === 0 ? (
+              <p className="body soft">{t.evSpeakersSoon}</p>
+            ) : (
+              <ul>
+                {event.speakers.map((s, i) => (
+                  <li key={i}>
+                    {s.photo_url ? (
+                      <Image className="ev-photo" src={s.photo_url} alt={s.name ?? ""} width={320} height={400} sizes="(max-width: 640px) 40vw, 240px" />
+                    ) : (
+                      anyPhoto && <div className="ev-photo blank" aria-hidden="true" />
+                    )}
+                    {s.name && <span className="body">{s.name}</span>}
+                    <span className={s.name ? "label soft" : "body"}>{s.role}</span>
+                    <span className="label soft">{s.company}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {join && event.speakers.length > 0 && (
+              <p className="label soft">{t.evSeatsLeft}: {event.seats_left}</p>
+            )}
+          </section>
+        )}
 
         {upcoming && (
           <div className="links label">

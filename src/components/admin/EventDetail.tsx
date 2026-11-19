@@ -2,10 +2,11 @@
 
 import QRCode from "qrcode";
 import { useEffect, useState } from "react";
-import { CITY_OPTS, SEAT_STATUS, STUDENT_STATUS, eventLabel } from "@/lib/admin/columns";
+import { CITY_OPTS, RESPONSE_LABEL, SEAT_STATUS, STUDENT_STATUS, dayLabel, eventLabel } from "@/lib/admin/columns";
 import { formatPacific } from "@/lib/tz";
 import type { AdminData, EventRow, EventSpeaker, SpeakerRow, StudentRow } from "@/lib/admin/types";
 import { downloadFlyer } from "./flyer";
+import { InviteButton, InviteLink } from "./Invites";
 import { NewSpeaker } from "./NewSpeaker";
 import type { AdminDb } from "./useAdminDb";
 
@@ -87,6 +88,21 @@ export function EventDetail({ event, data, db, onClose }: {
                 <span className="a-muted"> · {speaker!.role}, {speaker!.company}</span>
                 {link.source === "form" && <span className="a-tag">pidió esta cena</span>}
                 <SpeakerPublic speaker={speaker!} db={db} />
+                <div className="a-public">
+                  {data.invites
+                    .filter((inv) => inv.speaker_id === link.speaker_id && inv.event_id === event.id)
+                    .map((inv) => (
+                      <span key={inv.id} className="a-row">
+                        <span className="a-tag">
+                          {RESPONSE_LABEL[inv.response]}
+                          {inv.chosen_date && `: ${dayLabel(inv.chosen_date)}`}
+                        </span>
+                        <span className="a-muted">{inv.dates.map(dayLabel).join(" · ")}</span>
+                        <InviteLink code={inv.code} db={db} />
+                      </span>
+                    ))}
+                  <InviteButton speakerId={link.speaker_id} eventId={event.id} db={db} />
+                </div>
               </div>
               <div className="a-row">
                 <select value={link.status} onChange={(e) => db.setSeat(event.id, link.speaker_id, e.target.value as EventSpeaker["status"])}>
@@ -107,6 +123,14 @@ export function EventDetail({ event, data, db, onClose }: {
           </label>
         )}
         <NewSpeaker eventId={event.id} db={db} />
+
+        <h3>Fotos de la cena</h3>
+        <p className="a-muted">Se muestran en la página cuando la cena ya pasó. La primera es la grande.</p>
+        <EventPhotos event={event} db={db} />
+
+        <h3>Frases (opcional)</h3>
+        <p className="a-muted">Hasta 3. Aparecen debajo de las fotos cuando la cena ya pasó.</p>
+        <QuotesEditor key={`${event.id}-${JSON.stringify(event.quotes)}`} event={event} db={db} />
 
         <h3>Estudiantes</h3>
         {students.length === 0 && <p className="a-muted">Nadie ha aplicado todavía.</p>}
@@ -150,6 +174,78 @@ export function EventDetail({ event, data, db, onClose }: {
           </div>
         </div>
       </aside>
+    </div>
+  );
+}
+
+function EventPhotos({ event, db }: { event: EventRow; db: AdminDb }) {
+  const [uploading, setUploading] = useState(false);
+  return (
+    <>
+      {event.photos.length > 0 && (
+        <ul className="a-photos">
+          {event.photos.map((url, i) => (
+            <li key={url}>
+              {/* eslint-disable-next-line @next/next/no-img-element -- admin thumbnail */}
+              <img src={url} alt={`Foto ${i + 1}`} />
+              <div className="a-row">
+                <button className="a-link" disabled={i === 0} onClick={() => db.moveEventPhoto(event, i, -1)} aria-label="Mover antes">←</button>
+                <button className="a-link" disabled={i === event.photos.length - 1} onClick={() => db.moveEventPhoto(event, i, 1)} aria-label="Mover después">→</button>
+                <button className="a-link" onClick={() => window.confirm("¿Quitar esta foto?") && db.removeEventPhoto(event, url)}>Quitar</button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+      <label className="a-btn" style={{ justifySelf: "start" }}>
+        {uploading ? "Subiendo…" : "+ Subir fotos"}
+        <input
+          type="file"
+          accept="image/*"
+          multiple
+          hidden
+          disabled={uploading}
+          onChange={async (e) => {
+            const files = [...(e.target.files ?? [])];
+            e.target.value = "";
+            if (!files.length) return;
+            setUploading(true);
+            await db.addEventPhotos(event, files);
+            setUploading(false);
+          }}
+        />
+      </label>
+    </>
+  );
+}
+
+function QuotesEditor({ event, db }: { event: EventRow; db: AdminDb }) {
+  const [quotes, setQuotes] = useState(() =>
+    Array.from({ length: 3 }, (_, i) => event.quotes[i] ?? { text: "", author: "" }),
+  );
+  const clean = quotes
+    .map((q) => ({ text: q.text.trim(), author: q.author.trim() }))
+    .filter((q) => q.text);
+  const changed = JSON.stringify(clean) !== JSON.stringify(event.quotes);
+  const set = (i: number, k: "text" | "author", v: string) =>
+    setQuotes(quotes.map((q, j) => (j === i ? { ...q, [k]: v } : q)));
+  return (
+    <div className="a-grid">
+      {quotes.map((q, i) => (
+        <div key={i} className="span2 a-grid a-quote">
+          <label className="span2">Frase {i + 1}
+            <textarea rows={2} maxLength={400} value={q.text} onChange={(e) => set(i, "text", e.target.value)} />
+          </label>
+          <label className="span2">Quién lo dijo
+            <input value={q.author} maxLength={120} placeholder="Ej. Ana López, VP Product en Mercado Libre" onChange={(e) => set(i, "author", e.target.value)} />
+          </label>
+        </div>
+      ))}
+      <div className="a-row">
+        <button className="a-btn primary" disabled={!changed} onClick={() => db.update("events", event.id, { quotes: clean })}>
+          Guardar frases
+        </button>
+      </div>
     </div>
   );
 }

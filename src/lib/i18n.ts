@@ -28,6 +28,7 @@ const es = {
   evJoin: "Unirme como speaker",
   evFull: "La mesa de speakers está completa.",
   evClosed: "Las aplicaciones para estudiantes abren pronto.",
+  evPhotos: "Fotos de la cena",
   // about
   about: "Quiénes somos",
   story: "Daniela y Tomás se conocieron en la universidad, en la Ciudad de México. Cada quien siguió su camino profesional, y se reencontraron en el MBA de Berkeley Haas. De lo que más extrañaban era la conexión a la latina, así que empezaron Sobremesa Dinners para hacer crecer la comunidad latina en el Bay.",
@@ -100,6 +101,16 @@ const es = {
   ind_hospitality: "Hospitalidad / Turismo", ind_fashion_design: "Moda / Diseño", ind_marketing: "Marketing / Publicidad",
   ind_sports: "Deportes", ind_education: "Educación", ind_legal: "Legal", ind_manufacturing: "Manufactura / Industria",
   ind_mobility: "Transporte / Logística", ind_aerospace: "Aeroespacial / Defensa",
+  // speaker invite
+  invHello: "Hola",
+  invLede: "Nos encantaría tenerte de speaker en una Sobremesa: una cena para compartir tu experiencia con estudiantes de MBA latinos en el Bay.",
+  invDinner: "La cena",
+  invWhen: "¿Qué fecha te funciona?",
+  invNone: "Ninguna me funciona",
+  invMessage: "¿Algo que debamos saber?",
+  invAnswered: "Ya nos respondiste. Puedes cambiar tu respuesta aquí.",
+  invDoneYes: "¡Gracias! Te escribimos pronto con los detalles.",
+  invDoneNo: "Gracias por avisarnos. Te buscamos otra fecha.",
   // student form
   stTitle: "Aplicar a una cena",
   stLede: "Cada cena tiene 7 a 12 lugares para estudiantes. Elegimos según tu respuesta.",
@@ -149,6 +160,7 @@ const en: Dict = {
   evJoin: "Join as a speaker",
   evFull: "The speaker table is full.",
   evClosed: "Student applications open soon.",
+  evPhotos: "Photos from the dinner",
   about: "Who we are",
   story: "Daniela and Tomás met in college in Mexico City. Each followed their own career, and they found each other again at the Berkeley Haas MBA. What they missed most was connecting the Latino way, so they started Sobremesa Dinners to grow the Latino community in the Bay.",
   community: "Be part of the community",
@@ -216,6 +228,15 @@ const en: Dict = {
   ind_hospitality: "Hospitality / Travel", ind_fashion_design: "Fashion / Design", ind_marketing: "Marketing / Advertising",
   ind_sports: "Sports", ind_education: "Education", ind_legal: "Legal", ind_manufacturing: "Manufacturing / Industrial",
   ind_mobility: "Transportation / Logistics", ind_aerospace: "Aerospace / Defense",
+  invHello: "Hi",
+  invLede: "We’d love to have you as a speaker at a Sobremesa: a dinner to share your experience with Latino MBA students in the Bay.",
+  invDinner: "The dinner",
+  invWhen: "Which date works for you?",
+  invNone: "None of these work",
+  invMessage: "Anything we should know?",
+  invAnswered: "You already answered. You can change your answer here.",
+  invDoneYes: "Thank you! We’ll write to you soon with the details.",
+  invDoneNo: "Thanks for letting us know. We’ll find you another date.",
   stTitle: "Apply to a dinner",
   stLede: "Each dinner has 7 to 12 seats for students. We choose based on your answer.",
   stCostLabel: "Cost",
@@ -252,4 +273,11 @@ export function formatEventDate(iso: string | null, lang: Lang): string | null {
   return new Intl.DateTimeFormat(lang === "es" ? "es-MX" : "en-US", {
     timeZone: TZ, day: "numeric", month: "short",
   }).format(new Date(iso)).replace(".", "");
+}
+
+/** "martes, 9 de diciembre" / "Tuesday, December 9", for plain dates like "2026-12-09". */
+export function formatDay(date: string, lang: Lang): string {
+  return new Intl.DateTimeFormat(lang === "es" ? "es-MX" : "en-US", {
+    timeZone: "UTC", weekday: "long", day: "numeric", month: "long",
+  }).format(new Date(`${date}T00:00:00Z`));
 }

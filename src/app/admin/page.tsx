@@ -25,7 +25,7 @@ export default async function AdminPage() {
   }
 
   // Row-level security limits every query below to admins.
-  const [events, eventSpeakers, speakers, students, proposals, proposalSpeakers, proposalTopics, referrals] =
+  const [events, eventSpeakers, speakers, students, proposals, proposalSpeakers, proposalTopics, referrals, invites] =
     await Promise.all([
       db.from("events").select("*").order("number"),
       db.from("event_speakers").select("*"),
@@ -35,6 +35,7 @@ export default async function AdminPage() {
       db.from("proposal_speakers").select("*"),
       db.from("proposal_topics").select("*"),
       db.from("referrals").select("*").order("created_at", { ascending: false }),
+      db.from("invites").select("*").order("created_at", { ascending: false }),
     ]);
 
   const data = {
@@ -46,6 +47,7 @@ export default async function AdminPage() {
     proposalSpeakers: proposalSpeakers.data ?? [],
     proposalTopics: proposalTopics.data ?? [],
     referrals: referrals.data ?? [],
+    invites: invites.data ?? [],
   } as AdminData;
 
   return <Dashboard data={data} email={user.email ?? ""} />;
