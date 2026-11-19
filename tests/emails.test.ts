@@ -137,6 +137,17 @@ describe("renderEmail", () => {
     expect(html).toContain(`${SITE}/feedback/code-a`);
     expect(html).toContain("p.jpg");
   });
+  it("includes every photo (up to 9), resized by the site", () => {
+    const photos = Array.from({ length: 12 }, (_, i) => `https://x.supabase.co/storage/v1/object/public/event-photos/e1/${i}.jpg`);
+    const after = { ...event, photos };
+    const d = data({ events: [after] });
+    const r = recipientsFor("student_after", after, d)[0];
+    const { html } = renderEmail(emailContext("student_after", after, r, d, SITE), defaultDraft({ kind: "student_after", lang: "es" }));
+    expect(html.match(/<img /g)).toHaveLength(9);
+    expect(html).toContain(`${SITE}/_next/image?url=${encodeURIComponent(photos[0])}&amp;w=1200&amp;q=75`);
+    expect(html).toContain(encodeURIComponent(photos[8]));
+    expect(html).not.toContain(encodeURIComponent(photos[9]));
+  });
   it("invites to the WhatsApp community only when it's switched on", () => {
     const withLink = { ...event, whatsapp_url: "https://chat.whatsapp.com/abc" };
     const html = (e: EventRow) => {
