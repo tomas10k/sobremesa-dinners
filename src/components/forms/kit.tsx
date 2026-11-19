@@ -134,13 +134,13 @@ function toMessages(fields: Record<string, string>, t: ReturnType<typeof useLang
   return out;
 }
 
-export function SubmitRow({ state, formError }: { state: string; formError: string | null }) {
+export function SubmitRow({ state, formError, label }: { state: string; formError: string | null; label?: string }) {
   const { t } = useLang();
   return (
     <div className="submit-row">
       {formError && <p className="form-error body">{formError}</p>}
       <button className="btn label" type="submit" disabled={state === "sending"}>
-        {state === "sending" ? t.sending : t.send}
+        {state === "sending" ? t.sending : label ?? t.send}
       </button>
     </div>
   );

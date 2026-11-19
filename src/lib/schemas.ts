@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { countWords, ESSAY_MAX_WORDS } from "./words";
 import { isValidWeek, MAX_WEEKS_AHEAD } from "./weeks";
+import { EMAIL_KINDS } from "./emails/schedule";
 
 export const WEEKDAYS = ["mon", "tue", "wed", "thu"] as const;
 export const CITIES = ["berkeley", "sf"] as const;
@@ -127,6 +128,49 @@ export const proposalSchema = z
     if (p.kind !== "speakers" && p.topics.length === 0)
       ctx.addIssue({ code: "custom", path: ["topics"], message: "required" });
   });
+
+/** A speaker's answer to their invite: one of the proposed dates, or none of them. */
+export const inviteAnswerSchema = z.object({
+  code: z.string().regex(/^[0-9a-f]{16}$/),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
+  message: optionalText(1000),
+  website: honeypot,
+});
+
+const draft = z.object({ subject: text(200), intro: text(2000) });
+
+/** Admin: send one of a dinner's emails to some of its recipients (or a test to yourself). */
+export const sendEmailsSchema = z.object({
+  event_id: z.string().uuid(),
+  kind: z.enum(EMAIL_KINDS),
+  recipient_ids: z.array(z.string().uuid()).min(1).max(60),
+  drafts: z.object({ es: draft, en: draft }),
+  test: z.boolean().default(false),
+});
+
+/** A student confirming their seat from the "you're in" email. */
+export const confirmSeatSchema = z.object({
+  code: z.string().regex(/^[0-9a-f]{16}$/),
+  dietary: optionalText(200),
+  website: honeypot,
+});
+
+const rating = z.number().int().min(1).max(5);
+
+/** Feedback after a dinner, from a speaker's or student's personal link. */
+export const feedbackSchema = z.object({
+  code: z.string().regex(/^[0-9a-f]{16}$/),
+  overall: rating,
+  food: rating.optional(),
+  come_back: z.enum(["yes", "maybe", "no"]).optional(),
+  more_of: optionalText(1000),
+  less_of: optionalText(1000),
+  improve: optionalText(1000),
+  refer: optionalText(1000),
+  highlight: optionalText(400),
+  quote_ok: z.boolean().default(false),
+  website: honeypot,
+});
 
 export type SpeakerInput = z.input<typeof speakerSchema>;
 export type StudentInput = z.input<typeof studentSchema>;

@@ -2,7 +2,7 @@ import { dictionaries } from "@/lib/i18n";
 import { CITIES, INDUSTRIES, MOTIVATIONS, WEEKDAYS, YEARS, PROPOSAL_KINDS } from "@/lib/schemas";
 import { formatPacific } from "@/lib/tz";
 import type {
-  AdminData, EventRow, ProposalRow, ProposalSpeakerRow, ProposalTopicRow, ReferralRow, SpeakerRow, StudentRow,
+  AdminData, EventRow, FeedbackRow, InviteRow, ProposalRow, ProposalSpeakerRow, ProposalTopicRow, ReferralRow, SpeakerRow, StudentRow,
 } from "./types";
 
 const t = dictionaries.es;
@@ -48,6 +48,23 @@ const MOTIVATION_OPTS = opts(MOTIVATIONS, (v) => t[v as "give_back"]);
 const YEAR_OPTS = opts(YEARS, (v) => (v === "1" ? "1er año" : "2o año"));
 const KIND_OPTS = opts(PROPOSAL_KINDS, (v) => t[`kind_${v}` as "kind_both"]);
 
+export const RESPONSE_LABEL: Record<InviteRow["response"], string> = {
+  pending: "Sin respuesta",
+  accepted: "Aceptó",
+  declined: "Ninguna fecha",
+};
+const RESPONSE_OPTS = opts(Object.keys(RESPONSE_LABEL), (v) => RESPONSE_LABEL[v as InviteRow["response"]]);
+
+export const inviteUrl = (code: string) =>
+  `${typeof window === "undefined" ? "" : window.location.origin}/invitacion/${code}`;
+
+/** "mar 9 dic", for plain dates like "2026-12-09". */
+export function dayLabel(date: string): string {
+  return new Intl.DateTimeFormat("es-MX", { timeZone: "UTC", weekday: "short", day: "numeric", month: "short" })
+    .format(new Date(`${date}T00:00:00Z`))
+    .replace(/\./g, "");
+}
+
 export const eventLabel = (e: Pick<EventRow, "number" | "title_es">) => `No. ${e.number} — ${e.title_es}`;
 
 export function eventColumns(data: AdminData): Col<EventRow>[] {
@@ -66,6 +83,8 @@ export function eventColumns(data: AdminData): Col<EventRow>[] {
     { key: "status", label: "Estado", type: "select", options: EVENT_STATUS, filter: true },
     { key: "applications_open", label: "Aplicaciones abiertas", type: "bool", filter: true },
     { key: "speakers_needed", label: "Speakers necesarios", type: "int" },
+    { key: "price_usd", label: "Precio (USD)", type: "int" },
+    { key: "venmo_handle", label: "Venmo", type: "text" },
     {
       key: "id", label: "Speakers confirmados", type: "text", readOnly: true,
       get: (e) => `${count(e.id, ["confirmed"], data.eventSpeakers)} / ${e.speakers_needed}`,
@@ -96,6 +115,7 @@ export function speakerColumns(data: AdminData): Col<SpeakerRow>[] {
     { key: "role", label: "Rol", type: "text" },
     { key: "public_profile", label: "Autorizó nombre y foto", type: "bool", filter: true },
     { key: "photo_url", label: "Foto", type: "url" },
+    { key: "bio", label: "Bio corta (va en los correos)", type: "long", width: 260 },
     { key: "industry", label: "Industria", type: "select", options: INDUSTRY_OPTS, filter: true, width: 170 },
     { key: "weekdays", label: "Días", type: "multi", options: WEEKDAY_OPTS, filter: true, width: 170 },
     { key: "available_weeks", label: "Semanas", type: "weeks", filter: true, width: 200 },
@@ -121,6 +141,9 @@ export function studentColumns(data: AdminData): Col<StudentRow>[] {
       options: data.events.map((e) => ({ value: e.id, label: eventLabel(e) })),
     },
     { key: "status", label: "Estado", type: "select", options: STUDENT_STATUS, filter: true },
+    { key: "paid", label: "Pagó", type: "bool", filter: true },
+    { key: "seat_confirmed_at", label: "Confirmó lugar", type: "timestamp", readOnly: true },
+    { key: "dietary", label: "Dieta", type: "text" },
     { key: "email", label: "Email", type: "text", width: 200 },
     { key: "university", label: "Universidad", type: "text", filter: true },
     { key: "program", label: "Programa", type: "text", filter: true },
@@ -161,6 +184,58 @@ export function proposalTopicColumns(data: AdminData): Col<ProposalTopicRow>[] {
     { key: "title", label: "Tema propuesto", type: "text", width: 240 },
     { key: "description", label: "Descripción", type: "long", width: 320 },
     { key: "proposal_id", label: "Lo propuso", type: "text", readOnly: true, get: (r) => proposer(data)(r.proposal_id) },
+  ];
+}
+
+export function inviteColumns(data: AdminData): Col<InviteRow>[] {
+  return [
+    {
+      key: "speaker_id", label: "Speaker", type: "text", readOnly: true, width: 180,
+      get: (r) => data.speakers.find((s) => s.id === r.speaker_id)?.name ?? "",
+    },
+    {
+      key: "event_id", label: "Cena", type: "select", filter: true, width: 220,
+      options: data.events.map((e) => ({ value: e.id, label: eventLabel(e) })),
+    },
+    { key: "dates", label: "Fechas propuestas", type: "text", readOnly: true, width: 240, get: (r) => r.dates.map(dayLabel).join(" · ") },
+    { key: "response", label: "Respuesta", type: "select", options: RESPONSE_OPTS, filter: true },
+    { key: "chosen_date", label: "Eligió", type: "text", readOnly: true, get: (r) => (r.chosen_date ? dayLabel(r.chosen_date) : "") },
+    { key: "message", label: "Mensaje", type: "long", readOnly: true, width: 260 },
+    { key: "code", label: "Link", type: "url", readOnly: true, width: 260, get: (r) => inviteUrl(r.code) },
+    { key: "created_at", label: "Creada", type: "timestamp", readOnly: true },
+  ];
+}
+
+const COME_BACK_OPTS = opts(["yes", "maybe", "no"], (v) => ({ yes: "Sí", maybe: "Tal vez", no: "No" })[v]!);
+
+/** Whose feedback a row is, for the table and for quote attribution. */
+export function feedbackAuthor(r: FeedbackRow, data: AdminData): { name: string; credit: string; type: string } {
+  if (r.student_id) {
+    const s = data.students.find((x) => x.id === r.student_id);
+    return { name: s?.name ?? "", credit: s ? `${s.name.split(/\s+/)[0]}, ${s.year === "1" ? "MBA 1er año" : "MBA 2o año"}` : "", type: "Estudiante" };
+  }
+  const s = data.speakers.find((x) => x.id === r.speaker_id);
+  return { name: s?.name ?? "", credit: s ? [s.role, s.company].filter(Boolean).join(", ") : "", type: "Speaker" };
+}
+
+export function feedbackColumns(data: AdminData): Col<FeedbackRow>[] {
+  return [
+    { key: "id", label: "Quién", type: "text", readOnly: true, width: 180, get: (r) => feedbackAuthor(r, data).name },
+    { key: "student_id", label: "Tipo", type: "text", readOnly: true, filter: false, get: (r) => feedbackAuthor(r, data).type },
+    {
+      key: "event_id", label: "Cena", type: "select", readOnly: true, filter: true, width: 200,
+      options: data.events.map((e) => ({ value: e.id, label: eventLabel(e) })),
+    },
+    { key: "overall", label: "General (1–5)", type: "int", readOnly: true, filter: true },
+    { key: "food", label: "Comida (1–5)", type: "int", readOnly: true, filter: true },
+    { key: "come_back", label: "¿Volvería?", type: "select", options: COME_BACK_OPTS, readOnly: true, filter: true },
+    { key: "more_of", label: "Más de…", type: "long", readOnly: true, width: 220 },
+    { key: "less_of", label: "Menos de…", type: "long", readOnly: true, width: 220 },
+    { key: "improve", label: "Mejorar", type: "long", readOnly: true, width: 220 },
+    { key: "refer", label: "A quién invitar", type: "long", readOnly: true, width: 200 },
+    { key: "highlight", label: "Momento / frase", type: "long", readOnly: true, width: 240 },
+    { key: "quote_ok", label: "Se puede citar", type: "bool", readOnly: true, filter: true },
+    { key: "created_at", label: "Recibido", type: "timestamp", readOnly: true },
   ];
 }
 

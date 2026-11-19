@@ -2,21 +2,28 @@
 
 import QRCode from "qrcode";
 import { useEffect, useState } from "react";
-import { CITY_OPTS, SEAT_STATUS, STUDENT_STATUS, eventLabel } from "@/lib/admin/columns";
+import { CITY_OPTS, RESPONSE_LABEL, SEAT_STATUS, STUDENT_STATUS, dayLabel, eventLabel } from "@/lib/admin/columns";
 import { formatPacific } from "@/lib/tz";
 import type { AdminData, EventRow, EventSpeaker, SpeakerRow, StudentRow } from "@/lib/admin/types";
+import { eventEmailStatus, unpaidStudents } from "@/lib/emails/due";
+import { KIND_LABEL, dueAt, type EmailKind } from "@/lib/emails/schedule";
+import { EmailComposer } from "./EmailComposer";
 import { downloadFlyer } from "./flyer";
+import { InviteButton, InviteLink } from "./Invites";
 import { NewSpeaker } from "./NewSpeaker";
 import type { AdminDb } from "./useAdminDb";
 
 const STUDENT_SEATS = 12;
 const SEATED: StudentRow["status"][] = ["accepted", "confirmed", "attended"];
 
-export function EventDetail({ event, data, db, onClose }: {
+export function EventDetail({ event, data, db, admin, onClose, initialEmail = null }: {
   event: EventRow;
   data: AdminData;
   db: AdminDb;
+  admin: string;
   onClose: () => void;
+  /** Opens this email's composer right away (from the morning reminder's link). */
+  initialEmail?: EmailKind | null;
 }) {
   const links = data.eventSpeakers.filter((l) => l.event_id === event.id);
   const speakers = links
@@ -32,6 +39,8 @@ export function EventDetail({ event, data, db, onClose }: {
   const [applyUrl, setApplyUrl] = useState("");
   const [qr, setQr] = useState("");
   const [openEssay, setOpenEssay] = useState<string | null>(null);
+  const [composing, setComposing] = useState<EmailKind | null>(initialEmail);
+  const unpaid = new Set(unpaidStudents(event, data).map((r) => r.id));
   useEffect(() => {
     const url = `${window.location.origin}/estudiante?cena=${event.number}`;
     QRCode.toDataURL(url, { width: 600, margin: 2, color: { dark: "#1f3a2e", light: "#ffffff" } }).then((png) => {
@@ -71,6 +80,11 @@ export function EventDetail({ event, data, db, onClose }: {
           <Meter label="Estudiantes aceptados" value={seated} max={STUDENT_SEATS} note={`${students.length} aplicaron`} />
         </div>
 
+        <h3>Correos</h3>
+        <EmailsOverview event={event} data={data} onCompose={setComposing} />
+        <h3>Para los correos</h3>
+        <EmailFields key={`${event.id}-${event.price_usd}-${event.venmo_handle}-${event.hear_points.join("|")}-${event.whatsapp_on}-${event.whatsapp_url}`} event={event} data={data} db={db} />
+
         <h3>Página pública</h3>
         <DescriptionEditor key={event.id} event={event} db={db} />
 
@@ -87,6 +101,21 @@ export function EventDetail({ event, data, db, onClose }: {
                 <span className="a-muted"> · {speaker!.role}, {speaker!.company}</span>
                 {link.source === "form" && <span className="a-tag">pidió esta cena</span>}
                 <SpeakerPublic speaker={speaker!} db={db} />
+                <div className="a-public">
+                  {data.invites
+                    .filter((inv) => inv.speaker_id === link.speaker_id && inv.event_id === event.id)
+                    .map((inv) => (
+                      <span key={inv.id} className="a-row">
+                        <span className="a-tag">
+                          {RESPONSE_LABEL[inv.response]}
+                          {inv.chosen_date && `: ${dayLabel(inv.chosen_date)}`}
+                        </span>
+                        <span className="a-muted">{inv.dates.map(dayLabel).join(" · ")}</span>
+                        <InviteLink code={inv.code} db={db} />
+                      </span>
+                    ))}
+                  <InviteButton speakerId={link.speaker_id} eventId={event.id} db={db} />
+                </div>
               </div>
               <div className="a-row">
                 <select value={link.status} onChange={(e) => db.setSeat(event.id, link.speaker_id, e.target.value as EventSpeaker["status"])}>
@@ -108,6 +137,14 @@ export function EventDetail({ event, data, db, onClose }: {
         )}
         <NewSpeaker eventId={event.id} db={db} />
 
+        <h3>Fotos de la cena</h3>
+        <p className="a-muted">Se muestran en la página cuando la cena ya pasó. La primera es la grande.</p>
+        <EventPhotos event={event} db={db} />
+
+        <h3>Frases (opcional)</h3>
+        <p className="a-muted">Hasta 3. Aparecen debajo de las fotos cuando la cena ya pasó.</p>
+        <QuotesEditor key={`${event.id}-${JSON.stringify(event.quotes)}`} event={event} db={db} />
+
         <h3>Estudiantes</h3>
         {students.length === 0 && <p className="a-muted">Nadie ha aplicado todavía.</p>}
         <ul className="a-list">
@@ -120,10 +157,21 @@ export function EventDetail({ event, data, db, onClose }: {
                   {openEssay === s.id ? "Ocultar ensayo" : "Ver ensayo"}
                 </button>
                 {openEssay === s.id && <p className="a-essay">{s.essay}</p>}
+                <div className="a-public">
+                  {s.seat_confirmed_at && <span className="a-tag">confirmó su lugar</span>}
+                  {s.dietary && <span className="a-tag">dieta: {s.dietary}</span>}
+                  {unpaid.has(s.id) && <span className="a-tag a-tag-warn">48 h sin pagar</span>}
+                </div>
               </div>
-              <select value={s.status} onChange={(e) => db.update("students", s.id, { status: e.target.value })}>
-                {STUDENT_STATUS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
+              <div className="a-row">
+                <label className="a-inline">
+                  <input type="checkbox" checked={s.paid} onChange={() => db.setPaid(s.id, !s.paid)} />
+                  Pagó
+                </label>
+                <select value={s.status} onChange={(e) => db.update("students", s.id, { status: e.target.value })}>
+                  {STUDENT_STATUS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </div>
             </li>
           ))}
         </ul>
@@ -150,6 +198,161 @@ export function EventDetail({ event, data, db, onClose }: {
           </div>
         </div>
       </aside>
+      {composing && (
+        <EmailComposer event={event} kind={composing} data={data} db={db} admin={admin} onClose={() => setComposing(null)} />
+      )}
+    </div>
+  );
+}
+
+const STATE_LABEL = { none: "Sin destinatarios", waiting: "Programado", due: "Toca enviar", done: "Enviado", missed: "Ya pasó" } as const;
+
+/** The dinner's emails in order, with where each stands. */
+function EmailsOverview({ event, data, onCompose }: { event: EventRow; data: AdminData; onCompose: (k: EmailKind) => void }) {
+  return (
+    <ul className="a-list">
+      {eventEmailStatus(event, data).map((s) => {
+        const due = dueAt(s.kind, event.starts_at);
+        return (
+          <li key={s.kind}>
+            <div>
+              <strong>{KIND_LABEL[s.kind]}</strong>
+              <div className="a-muted">
+                {s.kind === "speaker_confirmed" ? "Al confirmar a cada speaker" : due ? formatPacific(due.toISOString()) : "Cuando la cena tenga fecha"}
+                {s.eligible > 0 && ` · ${s.sent} de ${s.eligible} enviados`}
+                {s.noEmail > 0 && ` · ${s.noEmail} sin email`}
+              </div>
+            </div>
+            <div className="a-row">
+              <span className={`a-tag a-state-${s.state}`}>{STATE_LABEL[s.state]}</span>
+              <button className={`a-btn ${s.state === "due" ? "primary" : ""}`} onClick={() => onCompose(s.kind)}>Revisar y enviar</button>
+            </div>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+/** Price, Venmo (Tomás's or Daniela's, per dinner) and what the students want to hear. */
+function EmailFields({ event, data, db }: { event: EventRow; data: AdminData; db: AdminDb }) {
+  const [price, setPrice] = useState(event.price_usd === null ? "" : String(event.price_usd));
+  const [venmo, setVenmo] = useState(event.venmo_handle ?? "");
+  const [points, setPoints] = useState(() => Array.from({ length: 3 }, (_, i) => event.hear_points[i] ?? ""));
+  // The community link rarely changes: start from the last dinner that had one.
+  const lastLink = data.events.find((e) => e.whatsapp_url)?.whatsapp_url ?? "";
+  const [waOn, setWaOn] = useState(event.whatsapp_on);
+  const [waUrl, setWaUrl] = useState(event.whatsapp_url ?? lastLink);
+  const handles = [...new Set(data.events.map((e) => e.venmo_handle).filter(Boolean))] as string[];
+  const cleanVenmo = venmo.trim().replace(/^@/, "");
+  const next = {
+    price_usd: price.trim() === "" ? null : Number(price),
+    venmo_handle: cleanVenmo || null,
+    hear_points: points.map((p) => p.trim()).filter(Boolean),
+    whatsapp_on: waOn && Boolean(waUrl.trim()),
+    whatsapp_url: waUrl.trim() || null,
+  };
+  const changed =
+    next.price_usd !== event.price_usd || next.venmo_handle !== event.venmo_handle ||
+    JSON.stringify(next.hear_points) !== JSON.stringify(event.hear_points) ||
+    next.whatsapp_on !== event.whatsapp_on || next.whatsapp_url !== event.whatsapp_url;
+  return (
+    <div className="a-grid">
+      <label>Precio por estudiante (USD)
+        <input type="number" min={0} max={500} value={price} onChange={(e) => setPrice(e.target.value)} placeholder="18" />
+      </label>
+      <label>Venmo que cobra esta cena
+        <input list="venmo-handles" value={venmo} onChange={(e) => setVenmo(e.target.value)} placeholder="usuario-de-venmo" />
+        <datalist id="venmo-handles">{handles.map((h) => <option key={h} value={h} />)}</datalist>
+      </label>
+      <p className="a-muted span2">Lo que los estudiantes quieren escuchar (va en “La mesa está puesta”). Hasta 3.</p>
+      {points.map((p, i) => (
+        <label key={i} className="span2">Punto {i + 1}
+          <input value={p} maxLength={300} onChange={(e) => setPoints(points.map((x, j) => (j === i ? e.target.value : x)))} />
+        </label>
+      ))}
+      <label className="a-inline span2">
+        <input type="checkbox" checked={waOn} onChange={(e) => setWaOn(e.target.checked)} />
+        Invitar a la comunidad de WhatsApp en los “gracias” (solo si todos los speakers de esta cena aceptaron)
+      </label>
+      <label className="span2">Link de la comunidad
+        <input value={waUrl} onChange={(e) => setWaUrl(e.target.value)} placeholder="https://chat.whatsapp.com/…" />
+      </label>
+      <div className="a-row">
+        <button className="a-btn primary" disabled={!changed} onClick={() => db.update("events", event.id, next)}>Guardar</button>
+      </div>
+    </div>
+  );
+}
+
+function EventPhotos({ event, db }: { event: EventRow; db: AdminDb }) {
+  const [uploading, setUploading] = useState(false);
+  return (
+    <>
+      {event.photos.length > 0 && (
+        <ul className="a-photos">
+          {event.photos.map((url, i) => (
+            <li key={url}>
+              {/* eslint-disable-next-line @next/next/no-img-element -- admin thumbnail */}
+              <img src={url} alt={`Foto ${i + 1}`} />
+              <div className="a-row">
+                <button className="a-link" disabled={i === 0} onClick={() => db.moveEventPhoto(event, i, -1)} aria-label="Mover antes">←</button>
+                <button className="a-link" disabled={i === event.photos.length - 1} onClick={() => db.moveEventPhoto(event, i, 1)} aria-label="Mover después">→</button>
+                <button className="a-link" onClick={() => window.confirm("¿Quitar esta foto?") && db.removeEventPhoto(event, url)}>Quitar</button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+      <label className="a-btn" style={{ justifySelf: "start" }}>
+        {uploading ? "Subiendo…" : "+ Subir fotos"}
+        <input
+          type="file"
+          accept="image/*"
+          multiple
+          hidden
+          disabled={uploading}
+          onChange={async (e) => {
+            const files = [...(e.target.files ?? [])];
+            e.target.value = "";
+            if (!files.length) return;
+            setUploading(true);
+            await db.addEventPhotos(event, files);
+            setUploading(false);
+          }}
+        />
+      </label>
+    </>
+  );
+}
+
+function QuotesEditor({ event, db }: { event: EventRow; db: AdminDb }) {
+  const [quotes, setQuotes] = useState(() =>
+    Array.from({ length: 3 }, (_, i) => event.quotes[i] ?? { text: "", author: "" }),
+  );
+  const clean = quotes
+    .map((q) => ({ text: q.text.trim(), author: q.author.trim() }))
+    .filter((q) => q.text);
+  const changed = JSON.stringify(clean) !== JSON.stringify(event.quotes);
+  const set = (i: number, k: "text" | "author", v: string) =>
+    setQuotes(quotes.map((q, j) => (j === i ? { ...q, [k]: v } : q)));
+  return (
+    <div className="a-grid">
+      {quotes.map((q, i) => (
+        <div key={i} className="span2 a-grid a-quote">
+          <label className="span2">Frase {i + 1}
+            <textarea rows={2} maxLength={400} value={q.text} onChange={(e) => set(i, "text", e.target.value)} />
+          </label>
+          <label className="span2">Quién lo dijo
+            <input value={q.author} maxLength={120} placeholder="Ej. Ana López, VP Product en Mercado Libre" onChange={(e) => set(i, "author", e.target.value)} />
+          </label>
+        </div>
+      ))}
+      <div className="a-row">
+        <button className="a-btn primary" disabled={!changed} onClick={() => db.update("events", event.id, { quotes: clean })}>
+          Guardar frases
+        </button>
+      </div>
     </div>
   );
 }
