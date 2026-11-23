@@ -1,12 +1,14 @@
 import { speakerSchema } from "@/lib/schemas";
 import { serviceClient } from "@/lib/supabase/server";
-import { invalid, notConfigured, readJson, serverError } from "@/lib/api";
+import { invalid, notConfigured, rateLimited, readJson, serverError } from "@/lib/api";
 
 export async function POST(req: Request) {
   const parsed = speakerSchema.safeParse(await readJson(req));
   if (!parsed.success) return invalid(parsed.error);
   const db = serviceClient();
   if (!db) return notConfigured();
+  const limited = await rateLimited(req, db, "speakers");
+  if (limited) return limited;
 
   const { seats, referrals, website, weeks, ...speaker } = parsed.data;
   const motivation_other = speaker.motivations.includes("other") ? speaker.motivation_other : undefined;
