@@ -13,6 +13,15 @@ const LINEN = "#ece6d8";
 const PAPER = "#f6f2e9";
 const FONT = "'Helvetica Neue', Helvetica, Arial, sans-serif";
 const DINNER_MS = 2.5 * 60 * 60 * 1000;
+const MAX_EMAIL_PHOTOS = 9;
+// Widths the site's image resizer accepts (Next.js defaults).
+const IMAGE_WIDTHS = [640, 750, 828, 1080, 1200, 1920];
+
+/** A photo resized by the site, at the smallest allowed width of at least `w` px. */
+export function emailImage(site: string, src: string, w: number): string {
+  const width = IMAGE_WIDTHS.find((x) => x >= w) ?? IMAGE_WIDTHS[IMAGE_WIDTHS.length - 1];
+  return `${site}/_next/image?url=${encodeURIComponent(src)}&w=${width}&q=75`;
+}
 
 const esc = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -184,13 +193,18 @@ export function renderEmail(ctx: EmailContext, draft: Draft): { subject: string;
   if (after) {
     const page = `${ctx.site}/cena/${event.number}`;
     if (event.photos.length) {
-      const [lead, ...rest] = event.photos;
+      // Every photo (up to 9): the first large, the rest in pairs. Served through the
+      // site's image resizer so the email loads fast instead of pulling full-size photos.
+      const [lead, ...rest] = event.photos.slice(0, MAX_EMAIL_PHOTOS);
       const img = (src: string, w: number) =>
-        `<a href="${esc(page)}"><img src="${esc(src)}" width="${w}" alt="" style="display:block;width:100%;max-width:${w}px;height:auto;border-radius:4px"></a>`;
+        `<a href="${esc(page)}"><img src="${esc(emailImage(ctx.site, src, w * 2))}" width="${w}" alt="" style="display:block;width:100%;max-width:${w}px;height:auto;border-radius:4px"></a>`;
+      const pairs: string[][] = [];
+      for (let i = 0; i < rest.length; i += 2) pairs.push(rest.slice(i, i + 2));
       add(
         rule + section(label(L.photos) + img(lead, 600) +
-          (rest.length ? `<table role="presentation" width="100%" style="margin-top:8px"><tr>${rest.slice(0, 2).map((p, i) =>
-            `<td width="50%" style="padding:${i ? "0 0 0 4px" : "0 4px 0 0"}">${img(p, 296)}</td>`).join("")}</tr></table>` : "") +
+          pairs.map((pair) => `<table role="presentation" width="100%" style="margin-top:8px"><tr>${pair.map((p, i) =>
+            `<td width="50%" valign="top" style="padding:${i ? "0 0 0 4px" : "0 4px 0 0"}">${img(p, 296)}</td>`).join("")}` +
+            (pair.length === 1 ? `<td width="50%"></td>` : "") + `</tr></table>`).join("") +
           `<p style="margin:14px 0 0;font:300 15px/1.5 ${FONT}">${link(page, L.seeMore)}</p>`),
         `${L.photos}: ${page}\n`,
       );
