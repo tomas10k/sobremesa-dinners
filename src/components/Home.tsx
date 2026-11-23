@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { CONTACT_EMAILS } from "@/lib/site";
 import { LangToggle, useLang } from "./LangProvider";
 import { Reveal } from "./Reveal";
 import { formatEventDate } from "@/lib/i18n";
@@ -140,10 +141,16 @@ export function Footer() {
     <footer>
       <div className="credits label">
         <span>Sobremesa Dinners · 2026</span>
-        <span>
-          <a href="mailto:diezcanedot@gmail.com">diezcanedot@gmail.com</a> &nbsp;·&nbsp;{" "}
-          <a href="mailto:dolavarrietag@gmail.com">dolavarrietag@gmail.com</a>
-        </span>
+        {CONTACT_EMAILS.length > 0 && (
+          <span>
+            {CONTACT_EMAILS.map((email, i) => (
+              <span key={email}>
+                {i > 0 && <>&nbsp;·&nbsp; </>}
+                <a href={`mailto:${email}`}>{email}</a>
+              </span>
+            ))}
+          </span>
+        )}
       </div>
     </footer>
   );

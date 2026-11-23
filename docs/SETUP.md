@@ -24,6 +24,8 @@ See [`.env.example`](../.env.example). Local values go in `.env.local` (ignored 
 | `RESEND_API_KEY` | Server only | Sends guest emails. Without it, the admin can preview emails but not send them |
 | `EMAIL_FROM` | Server only | The sender, on the verified `sobremesadinners.com` domain |
 | `CRON_SECRET` | Server only | Vercel sends it to `/api/cron/reminders`; also salts the hashed IPs used for rate limiting |
+| `ADMIN_EMAILS` | Server only | Comma-separated. Who gets the morning reminder and the reply-to on guest emails |
+| `NEXT_PUBLIC_CONTACT_EMAILS` | Browser + server | Comma-separated. The addresses in the site's footer |
 | `NEXT_PUBLIC_SITE_URL` | Browser + server | Base for links inside emails. Defaults to the live domain |
 
 If a key leaks: rotate it (Supabase → Settings → API, or Resend), update Vercel, redeploy.
@@ -36,6 +38,12 @@ The schema lives in [`supabase/migrations`](../supabase/migrations). Schema chan
 supabase login
 supabase link --project-ref <your-project-ref>
 supabase db push
+```
+
+Then let yourself into the admin portal. In the Supabase SQL editor, using the Google account you'll sign in with:
+
+```sql
+insert into public.admins (email) values ('you@example.com');
 ```
 
 ## Access policy

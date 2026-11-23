@@ -20,7 +20,7 @@ export async function sendEmails(emails: OutgoingEmail[]): Promise<string[]> {
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
       body: JSON.stringify(
-        emails.slice(i, i + 100).map((e) => ({ from: FROM, reply_to: ADMIN_EMAILS, to: [e.to], subject: e.subject, html: e.html, text: e.text })),
+        emails.slice(i, i + 100).map((e) => ({ from: FROM, ...(ADMIN_EMAILS.length ? { reply_to: ADMIN_EMAILS } : {}), to: [e.to], subject: e.subject, html: e.html, text: e.text })),
       ),
     });
     const body = await res.json().catch(() => ({}));

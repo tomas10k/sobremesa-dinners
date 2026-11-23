@@ -2,7 +2,7 @@
 
 Latino networking from a place of cultural alignment: small dinners (3 speakers + 7–12 MBA students) in SF or Berkeley, where connection happens the way it does at home — at the table, after the meal.
 
-Owners: Tomás Diez Canedo (diezcanedot@gmail.com) · Daniela Olavarrieta (dolavarrietag@gmail.com)
+Owners: Tomás Diez Canedo · Daniela Olavarrieta
 
 ---
 
