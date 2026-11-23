@@ -6,7 +6,7 @@ Small dinners in San Francisco and Berkeley where three Latino professionals sha
 
 ![The home page](docs/screenshots/hero.jpg)
 
-<!-- TODO (Tomás): one or two lines on why you built it yourself instead of using Eventbrite + Google Forms. Example: "We ran dinner No. 1 on spreadsheets and twenty WhatsApp threads. By No. 2, the portal handled it." -->
+I built this site to take on the tedious administrative parts of planning recurring events, and to add personal touches that professionalize it and give emotional depth to something we hope is valuable to the professional Latino community in the Bay.
 
 ## What it does
 
@@ -74,8 +74,6 @@ Some decisions I'd point to:
 - **Small guardrails where they count.** Public forms are rate-limited by a hashed IP in Postgres, have a honeypot field, and the essay word limit is enforced in the textarea, the API and a database constraint. Uploaded photos are resized in the browser before upload (about 1 MB → 140 KB).
 - **Checks on every pull request.** Lint, typecheck, 60+ unit tests and a production build run in GitHub Actions. Two people work on the repo through branches and pull requests ([CONTRIBUTING.md](CONTRIBUTING.md)).
 
-<!-- TODO (Tomás): optional "What I'd do next" or "What I learned" — 2–3 bullets. -->
-
 ## Running it
 
 Setup, environment variables, the access policy and deploy notes are in [docs/SETUP.md](docs/SETUP.md). The short version:
@@ -88,4 +86,4 @@ npm run dev   # renders with placeholder dinners; forms need a Supabase project
 ## Credits
 
 Built by Tomás Diez Canedo with Daniela Olavarrieta, co-founder of Sobremesa Dinners.
-<!-- TODO (Tomás): add your LinkedIn / portfolio link here. -->
+[linkedin.com/in/tomas-diez](https://www.linkedin.com/in/tomas-diez/)
