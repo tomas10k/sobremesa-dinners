@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { LangToggle, useLang } from "./LangProvider";
 import { Footer } from "./Home";
+import { Gallery } from "./Gallery";
 import { formatEventDate } from "@/lib/i18n";
 import { canApplyAsStudent, canJoinAsSpeaker } from "@/lib/seats";
 import type { PublicEvent } from "@/lib/events";
@@ -37,20 +38,7 @@ export function EventPage({ event }: { event: PublicEvent }) {
 
         {/* After the dinner: photos, then what people said. */}
         {!upcoming && event.photos.length > 0 && (
-          <section className="ev-gallery" aria-label={t.evPhotos}>
-            {event.photos.map((src, i) => (
-              <Image
-                key={src}
-                className={i === 0 ? "lead" : ""}
-                src={src}
-                alt=""
-                width={i === 0 ? 1600 : 800}
-                height={i === 0 ? 1067 : 1000}
-                sizes={i === 0 ? "(max-width: 1228px) 100vw, 1180px" : "(max-width: 640px) 100vw, 590px"}
-                priority={i === 0}
-              />
-            ))}
-          </section>
+          <Gallery photos={event.photos} />
         )}
         {!upcoming && event.quotes.length > 0 && (
           <section className="ev-quotes">
