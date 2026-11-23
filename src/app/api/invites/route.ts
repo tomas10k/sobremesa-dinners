@@ -1,6 +1,6 @@
 import { inviteAnswerSchema } from "@/lib/schemas";
 import { serviceClient } from "@/lib/supabase/server";
-import { invalid, notConfigured, readJson, serverError } from "@/lib/api";
+import { invalid, notConfigured, rateLimited, readJson, serverError } from "@/lib/api";
 
 /** A speaker answers their invite: one of the proposed dates, or none. They can change it later. */
 export async function POST(req: Request) {
@@ -8,6 +8,8 @@ export async function POST(req: Request) {
   if (!parsed.success) return invalid(parsed.error);
   const db = serviceClient();
   if (!db) return notConfigured();
+  const limited = await rateLimited(req, db, "invites");
+  if (limited) return limited;
 
   const { code, date, message } = parsed.data;
   const { data: invite, error } = await db.from("invites").select("id, dates").eq("code", code).maybeSingle();

@@ -114,6 +114,7 @@ export function useSubmit(endpoint: string) {
       }
       const body = await res.json().catch(() => ({}));
       if (res.status === 409) setFormError(t.errorDuplicate);
+      else if (res.status === 429) setFormError(t.errorTooMany);
       else setFormError(t.errorGeneric);
       if (body.fields) setErrors(toMessages(body.fields, t));
     } catch {
