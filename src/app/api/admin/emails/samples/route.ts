@@ -17,7 +17,7 @@ const bodySchema = z.object({
 
 // Visible stand-ins for what a dinner hasn't filled in yet, so every section shows.
 const EXAMPLE = {
-  venue: "2326 Grant Street",
+  venue: "100 Example Street",
   price_usd: 18,
   venmo_handle: "TU-VENMO",
   whatsapp_url: "https://chat.whatsapp.com/EJEMPLO",
