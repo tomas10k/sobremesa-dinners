@@ -72,7 +72,7 @@ Some decisions I'd point to:
 - **The email logic is plain functions.** What's due, who receives it, and how it renders all live in [`src/lib/emails/`](src/lib/emails) with no server or browser code, so they're unit-tested directly. That includes Pacific-time scheduling across the daylight-saving change and HTML escaping of anything a guest typed.
 - **Nothing is sent automatically to guests.** The cron job only reminds the admins, and a person reviews and sends each email. For a dinner series built on personal relationships, a wrong automated email costs more than a click saves.
 - **Small guardrails where they count.** Public forms are rate-limited by a hashed IP in Postgres, have a honeypot field, and the essay word limit is enforced in the textarea, the API and a database constraint. Uploaded photos are resized in the browser before upload (about 1 MB → 140 KB).
-- **Checks on every pull request.** Lint, typecheck, 65 tests and a production build run in GitHub Actions. Two people work on the repo through branches and pull requests ([CONTRIBUTING.md](CONTRIBUTING.md)).
+- **Checks on every pull request.** Lint, typecheck, 60+ unit tests and a production build run in GitHub Actions. Two people work on the repo through branches and pull requests ([CONTRIBUTING.md](CONTRIBUTING.md)).
 
 <!-- TODO (Tomás): optional "What I'd do next" or "What I learned" — 2–3 bullets. -->
 
