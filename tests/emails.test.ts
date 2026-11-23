@@ -11,7 +11,7 @@ const STARTS = "2026-11-18T03:00:00.000Z";
 
 const event = {
   id: "e1", number: 1, title_es: "Emprender siendo latino", title_en: "Entrepreneurship as a Latino",
-  starts_at: STARTS, city: "berkeley", venue: "2326 Grant Street", status: "upcoming",
+  starts_at: STARTS, city: "berkeley", venue: "100 Example Street", status: "upcoming",
   photos: [], quotes: [], price_usd: 18, venmo_handle: "tomas-diez", hear_points: ["How you made the leap"],
 } as unknown as EventRow;
 
@@ -125,9 +125,9 @@ describe("renderEmail", () => {
     expect(render("student_day", "s2").html).not.toContain("Todavía no vemos tu pago");
   });
   it("sends the address only the day before", () => {
-    expect(render("speaker_week", "a").html).not.toContain("2326 Grant Street");
-    expect(render("speaker_day", "a").html).toContain("2326 Grant Street");
-    expect(render("student_day", "s1").html).toContain("2326 Grant Street");
+    expect(render("speaker_week", "a").html).not.toContain("100 Example Street");
+    expect(render("speaker_day", "a").html).toContain("100 Example Street");
+    expect(render("student_day", "s1").html).toContain("100 Example Street");
   });
   it("links the feedback form and photos after the dinner", () => {
     const d = data({ events: [{ ...event, photos: ["https://x.supabase.co/p.jpg"] }] });
@@ -136,6 +136,17 @@ describe("renderEmail", () => {
     const { html } = renderEmail(emailContext("speaker_after", after, r, d, SITE), defaultDraft({ kind: "speaker_after", lang: "en" }));
     expect(html).toContain(`${SITE}/feedback/code-a`);
     expect(html).toContain("p.jpg");
+  });
+  it("includes every photo (up to 9), resized by the site", () => {
+    const photos = Array.from({ length: 12 }, (_, i) => `https://x.supabase.co/storage/v1/object/public/event-photos/e1/${i}.jpg`);
+    const after = { ...event, photos };
+    const d = data({ events: [after] });
+    const r = recipientsFor("student_after", after, d)[0];
+    const { html } = renderEmail(emailContext("student_after", after, r, d, SITE), defaultDraft({ kind: "student_after", lang: "es" }));
+    expect(html.match(/<img /g)).toHaveLength(9);
+    expect(html).toContain(`${SITE}/_next/image?url=${encodeURIComponent(photos[0])}&amp;w=1200&amp;q=75`);
+    expect(html).toContain(encodeURIComponent(photos[8]));
+    expect(html).not.toContain(encodeURIComponent(photos[9]));
   });
   it("invites to the WhatsApp community only when it's switched on", () => {
     const withLink = { ...event, whatsapp_url: "https://chat.whatsapp.com/abc" };

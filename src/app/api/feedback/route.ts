@@ -1,4 +1,4 @@
-import { invalid, notConfigured, readJson, serverError } from "@/lib/api";
+import { invalid, notConfigured, rateLimited, readJson, serverError } from "@/lib/api";
 import { findGuest } from "@/lib/guests";
 import { feedbackSchema } from "@/lib/schemas";
 import { serviceClient } from "@/lib/supabase/server";
@@ -11,6 +11,8 @@ export async function POST(req: Request) {
   if (!parsed.success) return invalid(parsed.error);
   const db = serviceClient();
   if (!db) return notConfigured();
+  const limited = await rateLimited(req, db, "feedback");
+  if (limited) return limited;
 
   const { code, website: _, ...answers } = parsed.data;
   const guest = await findGuest(code, db);

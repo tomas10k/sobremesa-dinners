@@ -15,9 +15,8 @@ create table public.admins (
   email text primary key check (email = lower(email))
 );
 
-insert into public.admins (email) values
-  ('diezcanedot@gmail.com'),
-  ('dolavarrietag@gmail.com');
+-- Admins are added by hand, not in code (see docs/SETUP.md):
+--   insert into public.admins (email) values ('you@example.com');
 
 create or replace function public.is_admin()
 returns boolean

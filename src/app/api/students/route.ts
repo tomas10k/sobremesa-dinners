@@ -1,6 +1,6 @@
 import { studentSchema } from "@/lib/schemas";
 import { serviceClient } from "@/lib/supabase/server";
-import { invalid, notConfigured, readJson, serverError } from "@/lib/api";
+import { invalid, notConfigured, rateLimited, readJson, serverError } from "@/lib/api";
 import { PAST_AFTER_MS } from "@/lib/events";
 
 export async function POST(req: Request) {
@@ -8,6 +8,8 @@ export async function POST(req: Request) {
   if (!parsed.success) return invalid(parsed.error);
   const db = serviceClient();
   if (!db) return notConfigured();
+  const limited = await rateLimited(req, db, "students");
+  if (limited) return limited;
 
   const { website, ...student } = parsed.data;
 

@@ -82,6 +82,14 @@ export function EventDetail({ event, data, db, admin, onClose, initialEmail = nu
 
         <h3>Correos</h3>
         <EmailsOverview event={event} data={data} onCompose={setComposing} />
+        <div className="a-row">
+          <span className="a-muted">Ver los 7 correos en tu bandeja (solo a ustedes dos):</span>
+          {(["es", "en"] as const).map((lang) => (
+            <button key={lang} className="a-btn" onClick={() => db.sendSamples(event.id, lang)}>
+              Mandarnos muestras ({lang.toUpperCase()})
+            </button>
+          ))}
+        </div>
         <h3>Para los correos</h3>
         <EmailFields key={`${event.id}-${event.price_usd}-${event.venmo_handle}-${event.hear_points.join("|")}-${event.whatsapp_on}-${event.whatsapp_url}`} event={event} data={data} db={db} />
 
