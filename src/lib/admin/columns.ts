@@ -45,6 +45,7 @@ const REFERRAL_STATUS = opts(["new", "contacted", "converted", "skipped"], (v) =
 export const INDUSTRY_OPTS = opts(INDUSTRIES, (v) => t[`ind_${v}` as "ind_tech"]);
 const WEEKDAY_OPTS = opts(WEEKDAYS, (v) => t[v as "mon"]);
 const MOTIVATION_OPTS = opts(MOTIVATIONS, (v) => t[v as "give_back"]);
+const LANG_OPTS = [{ value: "es", label: "Español" }, { value: "en", label: "Inglés" }];
 const YEAR_OPTS = opts(YEARS, (v) => (v === "1" ? "1er año" : "2o año"));
 const KIND_OPTS = opts(PROPOSAL_KINDS, (v) => t[`kind_${v}` as "kind_both"]);
 
@@ -116,6 +117,7 @@ export function speakerColumns(data: AdminData): Col<SpeakerRow>[] {
     { key: "public_profile", label: "Autorizó nombre y foto", type: "bool", filter: true },
     { key: "photo_url", label: "Foto", type: "url" },
     { key: "bio", label: "Bio corta (va en los correos)", type: "long", width: 260 },
+    { key: "lang", label: "Idioma de los correos", type: "select", options: LANG_OPTS, filter: true },
     { key: "industry", label: "Industria", type: "select", options: INDUSTRY_OPTS, filter: true, width: 170 },
     { key: "weekdays", label: "Días", type: "multi", options: WEEKDAY_OPTS, filter: true, width: 170 },
     { key: "available_weeks", label: "Semanas", type: "weeks", filter: true, width: 200 },
@@ -142,6 +144,7 @@ export function studentColumns(data: AdminData): Col<StudentRow>[] {
     },
     { key: "status", label: "Estado", type: "select", options: STUDENT_STATUS, filter: true },
     { key: "paid", label: "Pagó", type: "bool", filter: true },
+    { key: "lang", label: "Idioma de los correos", type: "select", options: LANG_OPTS, filter: true },
     { key: "seat_confirmed_at", label: "Confirmó lugar", type: "timestamp", readOnly: true },
     { key: "dietary", label: "Dieta", type: "text" },
     { key: "email", label: "Email", type: "text", width: 200 },
