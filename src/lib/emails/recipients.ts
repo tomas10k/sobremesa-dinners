@@ -59,10 +59,10 @@ export type EmailContext = {
   event: Pick<
     EventRow,
     | "number" | "title_es" | "title_en" | "starts_at" | "city" | "venue" | "hear_points" | "photos"
-    | "price_usd" | "venmo_handle" | "whatsapp_on" | "whatsapp_url"
+    | "price_usd" | "venmo_handle" | "zelle" | "whatsapp_on" | "whatsapp_url"
   >;
-  /** Confirmed speakers, without the recipient. */
-  speakers: { name: string; role: string; company: string; bio: string | null; linkedin_url: string | null }[];
+  /** Confirmed speakers, without the recipient. `shown`: they agreed to appear publicly. */
+  speakers: { name: string; role: string; company: string; bio: string | null; linkedin_url: string | null; shown: boolean }[];
   /** Accepted students, with their LinkedIn when they gave one. */
   students: { name: string; year: string; linkedin_url: string | null }[];
 };
@@ -73,7 +73,7 @@ export function emailContext(
   const speakers = data.eventSpeakers
     .filter((l) => l.event_id === event.id && l.status === "confirmed" && l.speaker_id !== recipient.id)
     .flatMap((l) => data.speakers.filter((s) => s.id === l.speaker_id))
-    .map((s) => ({ name: s.name, role: s.role, company: s.company, bio: s.bio, linkedin_url: s.linkedin_url }));
+    .map((s) => ({ name: s.name, role: s.role, company: s.company, bio: s.bio, linkedin_url: s.linkedin_url, shown: s.public_profile }));
   const students = data.students
     .filter((s) => s.event_id === event.id && ["accepted", "confirmed", "attended"].includes(s.status))
     .sort((a, b) => a.name.localeCompare(b.name, "es"))

@@ -146,6 +146,8 @@ export const sendEmailsSchema = z.object({
   recipient_ids: z.array(z.string().uuid()).min(1).max(60),
   drafts: z.object({ es: draft, en: draft }),
   test: z.boolean().default(false),
+  /** Tests only: render in this language instead of the guest's. */
+  lang: z.enum(["es", "en"]).optional(),
 });
 
 /** A student confirming their seat from the "you're in" email. */

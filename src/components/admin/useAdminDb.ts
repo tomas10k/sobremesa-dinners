@@ -155,7 +155,7 @@ export function useAdminDb() {
     /** Sends one of a dinner's emails (or a test to yourself) through the admin route. */
     sendEmail: async (body: {
       event_id: string; kind: string; recipient_ids: string[];
-      drafts: Record<"es" | "en", { subject: string; intro: string }>; test: boolean;
+      drafts: Record<"es" | "en", { subject: string; intro: string }>; test: boolean; lang?: "es" | "en";
     }) => {
       const res = await fetch("/api/admin/emails", {
         method: "POST",
