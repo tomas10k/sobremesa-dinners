@@ -17,19 +17,21 @@ export async function POST(req: Request) {
   if ("error" in auth) return auth.error;
   const parsed = sendEmailsSchema.safeParse(await readJson(req));
   if (!parsed.success) return invalid(parsed.error);
-  const { event_id, kind, recipient_ids, drafts, test } = parsed.data;
+  const { event_id, kind, recipient_ids, drafts, test, lang } = parsed.data;
 
   try {
     const data = await loadEmailData(auth.db, event_id);
     const event = data.events[0];
     if (!event) return Response.json({ error: "not_found" }, { status: 404 });
-    const chosen = recipientsFor(kind, event, data).filter((r) => recipient_ids.includes(r.id) && r.email);
+    // A test goes to the admin, so the person previewed doesn't need an email of their own.
+    const chosen = recipientsFor(kind, event, data).filter((r) => recipient_ids.includes(r.id) && (test || r.email));
     if (!chosen.length) return Response.json({ error: "no_recipients" }, { status: 400 });
 
     const render = (r: (typeof chosen)[number]) => renderEmail(emailContext(kind, event, r, data, SITE_URL), drafts[r.lang]);
 
     if (test) {
-      const sample = render(chosen[0]);
+      // In the language the admin was looking at, not necessarily the guest's.
+      const sample = render(lang ? { ...chosen[0], lang } : chosen[0]);
       await sendEmails([{ ...sample, to: auth.email, subject: `[Prueba] ${sample.subject}` }]);
       return Response.json({ sent: 0, test: auth.email });
     }

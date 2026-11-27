@@ -91,7 +91,7 @@ export function EventDetail({ event, data, db, admin, onClose, initialEmail = nu
           ))}
         </div>
         <h3>Para los correos</h3>
-        <EmailFields key={`${event.id}-${event.price_usd}-${event.venmo_handle}-${event.hear_points.join("|")}-${event.whatsapp_on}-${event.whatsapp_url}`} event={event} data={data} db={db} />
+        <EmailFields key={`${event.id}-${event.price_usd}-${event.venmo_handle}-${event.zelle}-${event.hear_points.join("|")}-${event.whatsapp_on}-${event.whatsapp_url}`} event={event} data={data} db={db} />
 
         <h3>Página pública</h3>
         <DescriptionEditor key={event.id} event={event} db={db} />
@@ -242,10 +242,12 @@ function EmailsOverview({ event, data, onCompose }: { event: EventRow; data: Adm
   );
 }
 
-/** Price, Venmo (Tomás's or Daniela's, per dinner) and what the students want to hear. */
+/** Price, how students pay (Zelle or Venmo, per dinner) and what the students want to hear. */
 function EmailFields({ event, data, db }: { event: EventRow; data: AdminData; db: AdminDb }) {
   const [price, setPrice] = useState(event.price_usd === null ? "" : String(event.price_usd));
   const [venmo, setVenmo] = useState(event.venmo_handle ?? "");
+  // Usually the same from one dinner to the next: start from the last one that had it.
+  const [zelle, setZelle] = useState(event.zelle ?? data.events.find((e) => e.zelle)?.zelle ?? "");
   const [points, setPoints] = useState(() => Array.from({ length: 3 }, (_, i) => event.hear_points[i] ?? ""));
   // The community link rarely changes: start from the last dinner that had one.
   const lastLink = data.events.find((e) => e.whatsapp_url)?.whatsapp_url ?? "";
@@ -256,12 +258,13 @@ function EmailFields({ event, data, db }: { event: EventRow; data: AdminData; db
   const next = {
     price_usd: price.trim() === "" ? null : Number(price),
     venmo_handle: cleanVenmo || null,
+    zelle: zelle.trim() || null,
     hear_points: points.map((p) => p.trim()).filter(Boolean),
     whatsapp_on: waOn && Boolean(waUrl.trim()),
     whatsapp_url: waUrl.trim() || null,
   };
   const changed =
-    next.price_usd !== event.price_usd || next.venmo_handle !== event.venmo_handle ||
+    next.price_usd !== event.price_usd || next.venmo_handle !== event.venmo_handle || next.zelle !== event.zelle ||
     JSON.stringify(next.hear_points) !== JSON.stringify(event.hear_points) ||
     next.whatsapp_on !== event.whatsapp_on || next.whatsapp_url !== event.whatsapp_url;
   return (
@@ -269,7 +272,10 @@ function EmailFields({ event, data, db }: { event: EventRow; data: AdminData; db
       <label>Precio por estudiante (USD)
         <input type="number" min={0} max={500} value={price} onChange={(e) => setPrice(e.target.value)} placeholder="18" />
       </label>
-      <label>Venmo que cobra esta cena
+      <label>Zelle que cobra esta cena (teléfono o email)
+        <input value={zelle} maxLength={80} onChange={(e) => setZelle(e.target.value)} placeholder="(555) 123-4567" />
+      </label>
+      <label>Venmo (opcional; si hay Zelle, los correos piden Zelle)
         <input list="venmo-handles" value={venmo} onChange={(e) => setVenmo(e.target.value)} placeholder="usuario-de-venmo" />
         <datalist id="venmo-handles">{handles.map((h) => <option key={h} value={h} />)}</datalist>
       </label>

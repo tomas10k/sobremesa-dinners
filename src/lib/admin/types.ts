@@ -18,6 +18,8 @@ export type EventRow = {
   /** For the guest emails. */
   price_usd: number | null;
   venmo_handle: string | null;
+  /** A phone number or email. When set, the emails ask for Zelle instead of Venmo. */
+  zelle: string | null;
   hear_points: string[];
   /** Invite to the WhatsApp community in the thank-yous, once all the speakers agreed. */
   whatsapp_on: boolean;

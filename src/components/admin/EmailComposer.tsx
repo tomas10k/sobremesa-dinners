@@ -33,16 +33,29 @@ export function EmailComposer({ event, kind, data, db, admin, onClose }: {
   const [editLang, setEditLang] = useState<Lang>(() => (recipients.some((r) => r.lang === "es") || !recipients.length ? "es" : "en"));
   const [previewId, setPreviewId] = useState(recipients[0]?.id ?? "");
   const [busy, setBusy] = useState(false);
+  const [phone, setPhone] = useState(false);
 
   const preview = recipients.find((r) => r.id === previewId) ?? recipients[0];
-  const rendered = preview ? renderEmail(emailContext(kind, event, preview, data, SITE_URL), drafts[preview.lang]) : null;
+  // The preview (and the test) is in the language being edited, so what you see is what you're writing.
+  const ctx = preview ? emailContext(kind, event, { ...preview, lang: editLang }, data, SITE_URL) : null;
+  const rendered = ctx ? renderEmail(ctx, drafts[editLang]) : null;
   const chosen = recipients.filter((r) => selected.has(r.id));
   const due = dueAt(kind, event.starts_at);
 
+  const speakerBefore = kind === "speaker_week" || kind === "speaker_day";
+  const noBio = ctx ? ctx.speakers.filter((s) => !s.bio).map((s) => s.name.split(" ")[0]) : [];
+  const noLinkedIn = ctx ? ctx.students.filter((s) => !s.linkedin_url).length : 0;
   const warnings = [
     !event.starts_at && "La cena no tiene fecha.",
-    kind === "student_week" && (!event.venmo_handle || event.price_usd === null) && "Falta el Venmo o el precio de esta cena: el correo saldría sin el pago.",
-    kind === "speaker_week" && event.hear_points.length === 0 && "Faltan “lo que los estudiantes quieren escuchar”.",
+    kind === "student_week" && (event.price_usd === null || (!event.zelle && !event.venmo_handle)) &&
+      "Falta el precio o el Zelle/Venmo de esta cena (en “Para los correos”): el correo saldría sin el pago.",
+    speakerBefore && event.hear_points.length === 0 &&
+      "Faltan “lo que los estudiantes quieren escuchar” (en “Para los correos”): esa sección no va a salir.",
+    (speakerBefore || kind === "student_week") && noBio.length > 0 &&
+      `Sin bio: ${noBio.join(", ")}. Sale su rol y empresa; agrega la bio en la pestaña Speakers.`,
+    kind === "student_week" && ctx && ctx.speakers.length > 0 && !ctx.speakers.some((s) => s.shown) &&
+      "Ningún speaker autorizó mostrar su nombre, así que “Quién va a estar” no sale. Márcalo en la pestaña Speakers.",
+    speakerBefore && noLinkedIn > 0 && `${noLinkedIn} estudiante(s) sin LinkedIn: sale solo su nombre.`,
     kind.endsWith("_day") && !event.venue && "Falta el lugar: el recordatorio es el que lleva la dirección.",
     kind.endsWith("_after") && event.photos.length === 0 && "Todavía no hay fotos de la cena: sube algunas antes de mandar el gracias.",
   ].filter(Boolean) as string[];
@@ -60,7 +73,7 @@ export function EmailComposer({ event, kind, data, db, admin, onClose }: {
     if (!ids.length) return;
     if (!test && !window.confirm(`¿Enviar “${KIND_LABEL[kind]}” a ${ids.length} persona(s)?`)) return;
     setBusy(true);
-    const ok = await db.sendEmail({ event_id: event.id, kind, recipient_ids: ids, drafts, test });
+    const ok = await db.sendEmail({ event_id: event.id, kind, recipient_ids: ids, drafts, test, ...(test ? { lang: editLang } : {}) });
     setBusy(false);
     if (ok && !test) onClose();
   }
@@ -115,8 +128,9 @@ export function EmailComposer({ event, kind, data, db, admin, onClose }: {
                   onChange={(e) => setDrafts({ ...drafts, [editLang]: { ...drafts[editLang], intro: e.target.value } })} />
               </label>
               <p className="a-muted span2">
-                {"{name}"} se cambia por el nombre de cada quien, {"{number}"} por el número y {"{topic}"} por el tema.
-                El resto del correo sale de los datos de la cena.
+                {"{name}"} se cambia por el nombre de cada quien, {"{number}"} por el número, {"{topic}"} por el tema
+                y {"{seats}"} por cuántos estudiantes tienen lugar. El resto del correo sale de los datos de la cena.
+                Cada persona lo recibe en su idioma (ES/EN junto a su nombre).
               </p>
               <div className="a-row span2">
                 <button className="a-link" onClick={() => setDrafts({ ...drafts, [editLang]: defaultDraft({ kind, lang: editLang }) })}>
@@ -133,11 +147,20 @@ export function EmailComposer({ event, kind, data, db, admin, onClose }: {
               <select value={preview?.id ?? ""} onChange={(e) => setPreviewId(e.target.value)}>
                 {recipients.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
               </select>
+              <span className="a-muted">en {editLang.toUpperCase()}</span>
+              <div className="a-tabs-inline" title="Ancho de la vista previa">
+                <button aria-current={!phone} onClick={() => setPhone(false)}>Compu</button>
+                <button aria-current={phone} onClick={() => setPhone(true)}>iPhone</button>
+              </div>
             </div>
+            {preview && preview.lang !== editLang && (
+              <p className="a-muted">Ojo: a {preview.name.split(" ")[0]} le llega en {preview.lang.toUpperCase()}.</p>
+            )}
             {rendered ? (
               <>
                 <p className="a-subject"><span className="a-muted">Asunto:</span> {rendered.subject}</p>
-                <iframe title="Vista previa del correo" srcDoc={rendered.html} sandbox="allow-popups allow-popups-to-escape-sandbox" />
+                <iframe title="Vista previa del correo" srcDoc={rendered.html} sandbox="allow-popups allow-popups-to-escape-sandbox"
+                  style={phone ? { width: 390, maxWidth: "100%", alignSelf: "center" } : undefined} />
               </>
             ) : (
               <p className="a-muted">Sin vista previa todavía.</p>
@@ -158,7 +181,7 @@ export function EmailComposer({ event, kind, data, db, admin, onClose }: {
           >
             Ya lo mandé por fuera
           </button>
-          <button className="a-btn" disabled={busy || !preview?.email} onClick={() => send(true)}>Enviarme una prueba</button>
+          <button className="a-btn" disabled={busy || !preview} onClick={() => send(true)}>Enviarme una prueba ({editLang.toUpperCase()})</button>
           <button className="a-btn primary" disabled={busy || chosen.length === 0} onClick={() => send(false)}>
             {busy ? "Enviando…" : `Enviar a ${chosen.length}`}
           </button>

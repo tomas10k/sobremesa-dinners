@@ -22,13 +22,14 @@ export type Guest = {
     city: "berkeley" | "sf" | null;
     price_usd: number | null;
     venmo_handle: string | null;
+    zelle: string | null;
     /** Only when the community is switched on for this dinner. */
     whatsapp_url: string | null;
   };
   feedback: Record<string, unknown> | null;
 };
 
-const EVENT = "id, number, title_es, title_en, starts_at, city, price_usd, venmo_handle, whatsapp_on, whatsapp_url";
+const EVENT = "id, number, title_es, title_en, starts_at, city, price_usd, venmo_handle, zelle, whatsapp_on, whatsapp_url";
 
 /** The community link leaves the server only while it's switched on. */
 function publicEvent(raw: unknown): Guest["event"] {

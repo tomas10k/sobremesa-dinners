@@ -158,8 +158,28 @@ describe("renderEmail", () => {
     expect(html({ ...withLink, whatsapp_on: false } as EventRow)).not.toContain("chat.whatsapp.com");
     expect(html({ ...withLink, whatsapp_on: true } as EventRow)).toContain("chat.whatsapp.com/abc");
   });
-  it("doesn't list speakers in student emails", () => {
-    expect(render("student_week", "s1").html).not.toContain("Speaker a");
+  it("shows students only the speakers who agreed to appear", () => {
+    const d = data({ speakers: [speaker("a", { public_profile: true, bio: "Founder of Co a." }), speaker("b"), speaker("c", { email: null })] });
+    const { html } = render("student_week", "s1", d);
+    expect(html).toContain("Speaker a");
+    expect(html).toContain("Founder of Co a.");
+    expect(html).not.toContain("Speaker b");
+    expect(render("student_week", "s1").html).not.toContain("Speaker a"); // nobody agreed: no section
+  });
+  it("asks for Zelle when the dinner has it, instead of Venmo", () => {
+    const zelle = { ...event, zelle: "(555) 010-2030" } as EventRow;
+    const d = data({ events: [zelle] });
+    const r = recipientsFor("student_week", zelle, d)[0];
+    const { html, text } = renderEmail(emailContext("student_week", zelle, r, d, SITE), defaultDraft({ kind: "student_week", lang: "en" }));
+    expect(html).toContain("(555) 010-2030");
+    expect(html).toContain("por Zelle"); // s1 reads Spanish
+    expect(html).not.toContain("venmo.com");
+    expect(text).toContain("$18 por Zelle");
+  });
+  it("fills {seats} with how many students have a seat, and says when the address comes", () => {
+    const { html } = render("student_week", "s1");
+    expect(html).toContain("Solo hay 2 lugares");
+    expect(html).toContain("te mandamos la dirección");
   });
   it("escapes what people typed", () => {
     const d = data({ speakers: [speaker("a", { name: "<b>Ana</b>" }), speaker("b", { bio: "R&D <script>" })] });

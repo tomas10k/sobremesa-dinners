@@ -3,7 +3,7 @@ import type { EmailKind } from "./schedule";
 
 /**
  * Default wording. The subject and the opening paragraph can be edited per dinner
- * in the admin; {name}, {number} and {topic} are filled in per recipient.
+ * in the admin; {name}, {number}, {topic} and {seats} are filled in per recipient.
  */
 type Copy = { subject: string; eyebrow: string; heading: string; intro: string };
 
@@ -34,9 +34,9 @@ const es: Record<EmailKind, Copy> = {
   },
   student_week: {
     subject: "Tienes lugar en Sobremesa No. {number}",
-    eyebrow: "Tienes lugar",
+    eyebrow: "Tu aplicación fue aceptada",
     heading: "Tienes lugar, {name}.",
-    intro: "Te elegimos para Sobremesa No. {number}: {topic}. Para apartar tu lugar, paga por Venmo y confírmalo en las próximas 48 horas.",
+    intro: "Gracias por aplicar. Leímos lo que compartiste y te apartamos un lugar en la mesa. Solo hay {seats} lugares y uno es tuyo, así que esperamos que lo aproveches al máximo.",
   },
   student_day: {
     subject: "Mañana: Sobremesa No. {number}",
@@ -79,9 +79,9 @@ const en: Record<EmailKind, Copy> = {
   },
   student_week: {
     subject: "You're in: Sobremesa No. {number}",
-    eyebrow: "You're in",
+    eyebrow: "Your application was accepted",
     heading: "You're in, {name}.",
-    intro: "You have a seat at Sobremesa No. {number}: {topic}. To hold it, please pay by Venmo and confirm within 48 hours.",
+    intro: "Thank you for applying. We read what you shared and saved you a seat at the table. There are only {seats} seats and one is yours, so we hope you make the most of it.",
   },
   student_day: {
     subject: "Tomorrow: Sobremesa No. {number}",
@@ -102,16 +102,19 @@ export const EMAIL_COPY: Record<Lang, Record<EmailKind, Copy>> = { es, en };
 /** Labels shared by every email. */
 export const EMAIL_LABELS = {
   es: {
-    when: "Cuándo", where: "Dónde", openMaps: "Abrir en Maps", addCalendar: "Agregar al calendario",
+    when: "Cuándo", where: "Dónde", topic: "Tema", openMaps: "Abrir en Maps", addCalendar: "Agregar a mi calendario",
     whereLater: "Te mandamos la dirección un día antes.",
+    whosComing: "Quién va a estar", whatsNext: "Qué sigue",
+    nextAddress: (day: string) => `El ${day} te mandamos la dirección.`,
+    nextCancel: "Si algo se atraviesa, avísanos lo antes posible para ofrecerle tu lugar a alguien más. En una mesa tan chica, cada lugar cuenta.",
     hear: "Lo que los estudiantes quieren escuchar",
     fellow: "Los otros speakers",
     students: (n: number) => `Los ${n} estudiantes`, profile: "Perfil", viewProfile: "Ver perfil",
     year: (y: string) => (y === "1" ? "MBA de primer año" : "MBA de segundo año"),
-    pay: "Pago", payAmount: (p: number) => `$${p} USD por Venmo`, payButton: "Pagar por Venmo",
-    payNote: (h: string, note: string) => `A @${h}, con la nota “${note}”.`,
+    pay: "Aparta tu lugar", payLead: "Para apartarlo, cubre tu parte de la cena:", via: "por",
+    payButton: "Pagar por Venmo", payNote: (note: string) => `Pon “${note}” en la nota.`,
     unpaid: "Todavía no vemos tu pago", confirm: "Confirmar mi lugar",
-    confirmNote: "Confírmalo aquí y cuéntanos si tienes alguna restricción alimentaria.",
+    confirmNote: "Con un clic confirmas tu lugar y agregas la cena a tu calendario. Ahí también puedes contarnos si tienes alguna restricción alimentaria.",
     photos: "La noche", seeMore: "Ver todas las fotos",
     feedback: "Dos minutos de feedback",
     feedbackIntro: "Si tienes un minuto, nos encantaría saber cómo te fue. Nos ayuda a darle forma a las próximas cenas.",
@@ -121,19 +124,23 @@ export const EMAIL_LABELS = {
     whatsappButton: "Unirme al WhatsApp",
     questions: "Si tienes cualquier pregunta, responde a este correo.",
     signBefore: "Nos vemos en la mesa,", signAfter: "Con gratitud,", signers: "Daniela y Tomás",
-    more: "Más sobre Sobremesa Dinners:",
+    whyStudent: (n: number) => `Recibiste este correo porque aplicaste a Sobremesa No. ${n}.`,
+    whySpeaker: (n: number) => `Recibiste este correo porque eres speaker de Sobremesa No. ${n}.`,
   },
   en: {
-    when: "When", where: "Where", openMaps: "Open in Maps", addCalendar: "Add to calendar",
+    when: "When", where: "Where", topic: "Topic", openMaps: "Open in Maps", addCalendar: "Add to my calendar",
     whereLater: "We'll send you the address the day before.",
+    whosComing: "Who's coming", whatsNext: "What's next",
+    nextAddress: (day: string) => `On ${day} we'll send the address.`,
+    nextCancel: "If something comes up, please let us know as soon as you can so we can offer your seat to someone else. At a table this small, every seat counts.",
     hear: "What the students want to hear",
     fellow: "Your fellow speakers",
     students: (n: number) => `The ${n} students`, profile: "Profile", viewProfile: "View profile",
     year: (y: string) => (y === "1" ? "1st-year MBA" : "2nd-year MBA"),
-    pay: "Payment", payAmount: (p: number) => `$${p} USD by Venmo`, payButton: "Pay with Venmo",
-    payNote: (h: string, note: string) => `To @${h}, with the note “${note}”.`,
+    pay: "Hold your seat", payLead: "To lock it in, cover your share of the dinner:", via: "via",
+    payButton: "Pay with Venmo", payNote: (note: string) => `Add “${note}” in the note.`,
     unpaid: "We haven't seen your payment yet", confirm: "Confirm my seat",
-    confirmNote: "Confirm here and tell us about any dietary restrictions.",
+    confirmNote: "One tap confirms your seat and adds the dinner to your calendar. You can also tell us about any dietary restrictions there.",
     photos: "The night", seeMore: "See all the photos",
     feedback: "Two minutes of feedback",
     feedbackIntro: "If you have a minute, we would love to hear how it went for you. It helps us shape the next dinners.",
@@ -143,6 +150,7 @@ export const EMAIL_LABELS = {
     whatsappButton: "Join the WhatsApp",
     questions: "If you have any questions, just reply to this email.",
     signBefore: "See you at the table,", signAfter: "With gratitude,", signers: "Daniela and Tomás",
-    more: "More about Sobremesa Dinners:",
+    whyStudent: (n: number) => `You received this because you applied to Sobremesa No. ${n}.`,
+    whySpeaker: (n: number) => `You received this because you're a speaker at Sobremesa No. ${n}.`,
   },
 } as const;

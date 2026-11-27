@@ -86,6 +86,7 @@ export function eventColumns(data: AdminData): Col<EventRow>[] {
     { key: "speakers_needed", label: "Speakers necesarios", type: "int" },
     { key: "price_usd", label: "Precio (USD)", type: "int" },
     { key: "venmo_handle", label: "Venmo", type: "text" },
+    { key: "zelle", label: "Zelle", type: "text" },
     {
       key: "id", label: "Speakers confirmados", type: "text", readOnly: true,
       get: (e) => `${count(e.id, ["confirmed"], data.eventSpeakers)} / ${e.speakers_needed}`,
